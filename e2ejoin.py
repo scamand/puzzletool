@@ -10,6 +10,7 @@ from itertools import permutations
 3. 可以设置是否寻找 ”衔尾蛇“ ，Ouroboros=True 时，将寻找能让结尾与开头相同的那个序列
 4. 可以设置是否保留未拼接的数字，keep_unsew=True 时，将返回未拼接的数字列表
 
+5. 其实不限于数字，字母也可以使用
 
 """
 
