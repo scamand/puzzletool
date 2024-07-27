@@ -46,7 +46,7 @@ def if_fitting_combinations(combe, spb, ouroboros):
         
 
     if ouroboros:
-        if combe[0][-spb:] != combe[-1][:spb]:
+        if combe[0][:spb] != combe[-1][-spb:]:
             return False
     return True
 
