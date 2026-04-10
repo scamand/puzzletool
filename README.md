@@ -1,8 +1,34 @@
-# 解谜小工具
+# Puzzle苦力小工具
 
 这是一组用来**辅助解谜**的小工具，能够节省在一些繁琐工作上所花费的时间。
 
-## 工具介绍
+## 在线访问
+
+网站已部署至 GitHub Pages，可直接访问：
+**https://[用户名].github.io/puzzletool/**
+
+## 工具箱概览
+
+### 📝 文字工具
+
+- 移位
+- 一对一密码表
+- 固定密码
+
+### 🖼️ 图像工具
+
+- 裁切
+- 拼图
+
+### ✏️ 纸笔工具
+
+- 自创纸笔
+
+---
+
+## Python 工具（本地运行）
+
+以下工具为 Python 脚本，需要在本地环境运行。
 
 ### 1. cipher_to_plain.py — 密文转明文
 
@@ -85,9 +111,11 @@ sew_up_list = [sew_up_nums(combes, spb) for combes in valid_combonations]
 
 ```
 puzzletool/
-├── cipher_to_plain.py    # 密文转明文
-├── num_char_convert.py   # A1Z26 加解密
-├── e2ejoin.py            # 首尾拼接
-├── test.py               # 条件搜索测试
+├── index.html              # 网页工具箱首页（GitHub Pages 入口）
+├── styles.css              # 页面样式表
+├── cipher_to_plain.py      # 密文转明文
+├── num_char_convert.py     # A1Z26 加解密
+├── e2ejoin.py              # 首尾拼接
+├── test.py                 # 条件搜索测试
 └── README.md
 ```
