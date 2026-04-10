@@ -4,10 +4,90 @@
 
 ## 工具介绍
 
-**[cipher_to_plain](https://github.com/scamand/puzzletool/blob/main/cipher_to_plain.py)** : 当密文已经被解出，可以使用这个文件，输入密文和得到的**密文-明文对照表**，得到明文的信息。得到的明文全文小写。
+### 1. cipher_to_plain.py — 密文转明文
 
-**[num_char_convert](https://github.com/scamand/puzzletool/blob/main/num_char_convert.py)** : 可以输入数字串或者字母串，得到对应的另一种串，请保证输入的数字范围在 1-26 之间，或者输入的字母在 a-z 之间。
+根据已知的**密文-明文对照表**，将密文转换为明文。
 
-**[e2ejoin](https://github.com/scamand/puzzletool/blob/main/e2ejoin.py)** : 可以输入数字串或者字母串，得到将他们首尾相同的元素放在一起再类似于作交集后的字符串。目前是使用的穷举法，所以请不要一次输入太多元素，否则运行时间和内存占用会超乎你的想象。(你可以自行计算一下排列组合提前预估可能需要运行的时间。)
+**使用方法：**
+```python
+from cipher_to_plain import cipher_to_plain
 
+cipher_text = "密文内容"
+cipher_dict = "ABCDEF"      # 密文字符集
+plain_dict = "IHQCSX"       # 对应的明文字符集
 
+result = cipher_to_plain(cipher_text, cipher_dict, plain_dict)
+print(result)  # 输出小写明文
+```
+
+**运行脚本：** 直接运行会使用内置示例进行转换。
+
+---
+
+### 2. num_char_convert.py — A1Z26 加解密
+
+在数字（1-26）和字母（a-z）之间互相转换，即 A=1, B=2 ... Z=26 的标准编码。
+
+**使用方法：**
+```python
+from num_char_convert import num_char_convert, char_num_convert
+
+# 数字转字母
+num_list = ["8", "5", "12", "25"]
+result = num_char_convert(num_list)  # "hello"
+
+# 字母转数字
+char_list = ["h", "e", "l", "l", "o"]
+result = char_num_convert(char_list)  # "8/5/12/12/15"
+```
+
+**运行脚本：** 直接运行会交互式询问输入，自动识别类型。
+
+---
+
+### 3. e2ejoin.py — 首尾拼接
+
+将多个字符串按首尾相同的方式拼接起来。例如 `1912` 和 `1256` 以 2 位重叠拼接为 `191256`。
+
+**功能特点：**
+- 输入用 `/` 分割的字符串列表
+- 指定相邻字符串的重叠位数
+- 可选**衔尾蛇模式**：要求最终结果首尾也相同（Ouroboros）
+- 可选保留未能拼接的部分
+
+**使用方法：**
+```python
+from e2ejoin import list_out_combinations, sew_up_nums
+
+numbers = "1912/1256/89/907"
+spb = 2  # 重叠位数
+
+# 获取所有可能的拼接方式
+valid_combonations = list_out_combinations(numbers, spb, ouroboros=False)
+
+# 拼接结果
+sew_up_list = [sew_up_nums(combes, spb) for combes in valid_combonations]
+```
+
+**运行脚本：** 直接运行会交互式询问输入。
+
+**注意：** 由于使用穷举法，元素数量过多时运行时间和内存消耗会急剧增长，请提前预估可能的排列数量。
+
+---
+
+### 4. test.py — 条件搜索工具
+
+根据特定条件（如数字之和）在所有排列结果中筛选满足条件的序列。用于探索数据中的规律。
+
+---
+
+## 文件结构
+
+```
+puzzletool/
+├── cipher_to_plain.py    # 密文转明文
+├── num_char_convert.py   # A1Z26 加解密
+├── e2ejoin.py            # 首尾拼接
+├── test.py               # 条件搜索测试
+└── README.md
+```
