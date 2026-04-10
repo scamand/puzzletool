@@ -1,0 +1,111 @@
+# Puzzle苦力小工具 - 开发规范
+
+本文档记录项目的硬性要求，每次开发新工具前必须阅读。
+
+---
+
+## 一、目录结构
+
+```
+puzzletool/
+├── index.html              # 首页（入口文件）
+├── styles.css              # 全局样式
+├── AI_read/                # AI 专用文档
+│   └── memo.txt            # 本文档
+├── text-tools/             # 文字处理类工具
+├── image-tools/            # 图像处理类工具
+└── pen-paper-tools/        # 纸笔类工具
+```
+
+**规则：**
+- 每个工具独立一个文件夹（或按分类集中存放）
+- HTML 文件名使用英文（如 `cipher-table.html`）
+- 避免文件散落在根目录
+
+---
+
+## 二、技术要求
+
+### 运行环境
+- 目标平台：GitHub Pages（纯静态部署）
+- 技术栈：HTML + CSS + Vanilla JavaScript（禁止使用 React/Vue 等框架）
+
+### 响应式设计
+- 必须适配桌面端和移动端
+- 使用媒体查询（`@media`）处理不同屏幕尺寸
+- 触控友好的按钮尺寸（移动端点击区域 ≥ 44px）
+
+### 代码规范
+- CSS 可内联在 HTML 中（单文件工具），或单独存放（多文件工具）
+- JavaScript 逻辑函数化，避免全局污染
+- 禁止使用 `alert` 进行用户提示，统一使用自定义 toast 提示
+
+---
+
+## 三、页面模板规范
+
+每个工具页面必须包含：
+
+### 1. 返回链接
+```html
+<a href="../index.html" class="back-link">← 返回工具箱</a>
+```
+
+### 2. 页面标题
+```html
+<h1 class="main-title">[工具名称]</h1>
+```
+
+### 3. 容器
+- 所有内容包裹在 `.container` 中
+- `max-width` 统一设置为 `700px`（工具页）或 `900px`（首页）
+- 居中显示
+
+---
+
+## 四、命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 文件名 | 英文 +  kebab-case | `shift-cipher.html` |
+| 分类目录 | 英文 + kebab-case | `text-tools/` |
+| CSS 类名 | 英文 + kebab-case | `.tool-section` |
+| JavaScript 函数 | 英文 + camelCase | `buildKeyMap()` |
+
+---
+
+## 五、README 维护
+
+每次完成工具开发后，必须更新根目录的 `README.md`：
+
+1. 在对应分类下添加工具名称和链接
+2. 添加工具功能说明和使用示例
+3. 更新文件结构树
+
+---
+
+## 六、错误处理规范
+
+用户输入错误时：
+
+- 输入框红色边框 + 抖动动画（`animation: shake 0.4s`）
+- 显示错误提示文字
+- 使用 toast 弹出错误信息
+- 按钮点击失败时也触发抖动 + 变红
+
+---
+
+## 七、动画与过渡
+
+- 所有交互元素添加 `transition`（建议 0.2~0.3s）
+- hover 效果：轻微上浮（`translateY(-2px)`）+ 阴影
+- 点击效果：`scale(0.98)` 或 `translateY(0)`
+- 错误效果：shake 动画（左右偏移）
+
+---
+
+## 八、MustDo.txt 和 ToDo.txt
+
+- `MustDo.txt`：记录**每次任务前后必须执行的操作**
+- `ToDo.txt`：记录**当前任务的详细需求**
+- 两个文件均存放在项目根目录

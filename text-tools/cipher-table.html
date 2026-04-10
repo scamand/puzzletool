@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一对一密码表</title>
+    <style>
+        /* ============================================
+           一对一密码表 - 样式表
+           ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 返回链接 */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #2980b9;
+        }
+
+        /* 标题 */
+        .main-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        /* 分割线 */
+        .divider {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 24px 0;
+        }
+
+        /* 密钥区域 */
+        .key-section {
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 16px;
+        }
+
+        .key-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 20px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+
+        .key-area.error {
+            border-color: #e74c3c;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .key-input {
+            flex: 1;
+            min-width: 180px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .key-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        }
+
+        .arrow {
+            font-size: 1.4rem;
+            color: #7f8c8d;
+            user-select: none;
+        }
+
+        /* 提示框 */
+        .hint-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .hint-box.visible {
+            display: block;
+        }
+
+        /* 错误提示 */
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* 转换区域 */
+        .convert-section {
+            margin-top: 24px;
+        }
+
+        .checkbox-area {
+            margin-bottom: 16px;
+        }
+
+        .checkbox-area label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .checkbox-area input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .text-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        }
+
+        /* 按钮区域 */
+        .btn-area {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-decrypt {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .btn-decrypt:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-encrypt {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .btn-encrypt:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn.error {
+            animation: shake 0.4s ease;
+            background: #e74c3c;
+        }
+
+        /* 全局提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #e74c3c;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* 响应式 */
+        @media (max-width: 599px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .main-title {
+                font-size: 1.4rem;
+            }
+
+            .key-area {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+
+            .key-input {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .btn-area {
+                gap: 12px;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回工具箱</a>
+        <h1 class="main-title">一对一密码表</h1>
+
+        <!-- 密钥区域 -->
+        <section class="key-section">
+            <h2 class="section-title">密钥区域</h2>
+            <div class="hint-box" id="hintBox">
+                填入元素时请使用空格进行分隔；若没有空格，则默认逐字符分割
+            </div>
+            <div class="key-area" id="keyArea">
+                <input type="text" class="key-input" id="cipherInput" placeholder="请输入密文元素">
+                <span class="arrow">→</span>
+                <input type="text" class="key-input" id="plainInput" placeholder="请输入明文元素">
+            </div>
+            <div class="error-message" id="keyErrorMsg"></div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- 转换区域 -->
+        <section class="convert-section">
+            <div class="checkbox-area">
+                <label>
+                    <input type="checkbox" id="preserveUnmatched">
+                    保留未匹配元素
+                </label>
+            </div>
+            <input type="text" class="text-input" id="cipherText" placeholder="请输入密文">
+            <div class="btn-area">
+                <button class="btn btn-decrypt" id="decryptBtn">↓ 解密</button>
+                <button class="btn btn-encrypt" id="encryptBtn">↑ 加密</button>
+            </div>
+            <input type="text" class="text-input" id="plainText" placeholder="请输入明文">
+        </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ============================================
+           一对一密码表 - JavaScript
+           ============================================ */
+
+        // DOM 元素
+        const cipherInput = document.getElementById('cipherInput');
+        const plainInput = document.getElementById('plainInput');
+        const keyArea = document.getElementById('keyArea');
+        const hintBox = document.getElementById('hintBox');
+        const keyErrorMsg = document.getElementById('keyErrorMsg');
+        const cipherText = document.getElementById('cipherText');
+        const plainText = document.getElementById('plainText');
+        const preserveUnmatched = document.getElementById('preserveUnmatched');
+        const decryptBtn = document.getElementById('decryptBtn');
+        const encryptBtn = document.getElementById('encryptBtn');
+        const toast = document.getElementById('toast');
+
+        // 密钥映射
+        let cipherToPlainMap = {};
+        let plainToCipherMap = {};
+
+        // 工具函数：显示提示
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 工具函数：显示密钥错误
+        function showKeyError(message) {
+            keyArea.classList.add('error');
+            keyErrorMsg.textContent = message;
+            keyErrorMsg.classList.add('visible');
+            setTimeout(() => {
+                keyArea.classList.remove('error');
+            }, 400);
+        }
+
+        // 工具函数：清除密钥错误
+        function clearKeyError() {
+            keyArea.classList.remove('error');
+            keyErrorMsg.classList.remove('visible');
+        }
+
+        // 工具函数：按钮错误动画
+        function btnError(btn) {
+            btn.classList.add('error');
+            setTimeout(() => {
+                btn.classList.remove('error');
+            }, 400);
+        }
+
+        // 工具函数：分割输入内容
+        function splitInput(text) {
+            if (text.includes(' ')) {
+                return text.split(' ').filter(item => item !== '');
+            }
+            return text.split('');
+        }
+
+        // 工具函数：构建密钥映射
+        function buildKeyMap() {
+            const cipherElements = splitInput(cipherInput.value);
+            const plainElements = splitInput(plainInput.value);
+
+            if (cipherElements.length === 0 || plainElements.length === 0) {
+                return null;
+            }
+
+            if (cipherElements.length !== plainElements.length) {
+                return { error: '左右元素数量不一致，可能没有添加分隔符！' };
+            }
+
+            cipherToPlainMap = {};
+            plainToCipherMap = {};
+
+            for (let i = 0; i < cipherElements.length; i++) {
+                cipherToPlainMap[cipherElements[i]] = plainElements[i];
+                plainToCipherMap[plainElements[i]] = cipherElements[i];
+            }
+
+            return { success: true };
+        }
+
+        // 工具函数：检查密钥是否完整
+        function isKeyComplete() {
+            return cipherInput.value.trim() !== '' && plainInput.value.trim() !== '';
+        }
+
+        // 工具函数：验证元素是否在密钥中
+        function validateElements(elements, isDecrypt) {
+            const map = isDecrypt ? cipherToPlainMap : plainToCipherMap;
+            const unmatched = [];
+
+            for (const elem of elements) {
+                if (!(elem in map)) {
+                    unmatched.push(elem);
+                }
+            }
+
+            return unmatched;
+        }
+
+        // 工具函数：转换文本
+        function convert(text, isDecrypt) {
+            const map = isDecrypt ? cipherToPlainMap : plainToCipherMap;
+            const preserve = preserveUnmatched.checked;
+            const elements = splitInput(text);
+            const result = [];
+
+            for (const elem of elements) {
+                if (elem in map) {
+                    result.push(map[elem]);
+                } else if (preserve) {
+                    result.push(elem);
+                } else {
+                    return { error: true, element: elem };
+                }
+            }
+
+            return { result: result.join('') };
+        }
+
+        // 密钥输入 - focus 显示提示
+        cipherInput.addEventListener('focus', () => {
+            hintBox.classList.add('visible');
+        });
+
+        plainInput.addEventListener('focus', () => {
+            hintBox.classList.add('visible');
+        });
+
+        // 密钥输入 - blur 验证
+        cipherInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (!document.activeElement.closest('.key-section')) {
+                    hintBox.classList.remove('visible');
+                    if (isKeyComplete()) {
+                        const result = buildKeyMap();
+                        if (result && result.error) {
+                            showKeyError(result.error);
+                        } else {
+                            clearKeyError();
+                        }
+                    }
+                }
+            }, 150);
+        });
+
+        plainInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (!document.activeElement.closest('.key-section')) {
+                    hintBox.classList.remove('visible');
+                    if (isKeyComplete()) {
+                        const result = buildKeyMap();
+                        if (result && result.error) {
+                            showKeyError(result.error);
+                        } else {
+                            clearKeyError();
+                        }
+                    }
+                }
+            }, 150);
+        });
+
+        // 点击页面其他区域也触发验证
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.key-section') && !e.target.closest('.btn-area')) {
+                hintBox.classList.remove('visible');
+                if (isKeyComplete()) {
+                    const result = buildKeyMap();
+                    if (result && result.error) {
+                        showKeyError(result.error);
+                    } else {
+                        clearKeyError();
+                    }
+                }
+            }
+        });
+
+        // 解密按钮
+        decryptBtn.addEventListener('click', () => {
+            // 检查密钥完整性
+            if (!isKeyComplete()) {
+                showKeyError('你输入的密钥不完整！');
+                btnError(decryptBtn);
+                return;
+            }
+
+            // 检查密文输入
+            const inputValue = cipherText.value.trim();
+            if (inputValue === '') {
+                showToast('你没有输入密文！');
+                btnError(decryptBtn);
+                return;
+            }
+
+            // 构建映射
+            const result = buildKeyMap();
+            if (result && result.error) {
+                showKeyError(result.error);
+                btnError(decryptBtn);
+                return;
+            }
+
+            // 验证元素
+            const elements = splitInput(inputValue);
+            const unmatched = validateElements(elements, true);
+            if (unmatched.length > 0) {
+                showToast(`密文中出现了密钥中不存在的元素：${unmatched[0]}`);
+                btnError(decryptBtn);
+                return;
+            }
+
+            // 转换
+            const convertResult = convert(inputValue, true);
+            if (convertResult.error) {
+                showToast(`密文中出现了密钥中不存在的元素：${convertResult.element}`);
+                btnError(decryptBtn);
+                return;
+            }
+
+            plainText.value = convertResult.result;
+        });
+
+        // 加密按钮
+        encryptBtn.addEventListener('click', () => {
+            // 检查密钥完整性
+            if (!isKeyComplete()) {
+                showKeyError('你输入的密钥不完整！');
+                btnError(encryptBtn);
+                return;
+            }
+
+            // 检查明文输入
+            const inputValue = plainText.value.trim();
+            if (inputValue === '') {
+                showToast('你没有输入明文！');
+                btnError(encryptBtn);
+                return;
+            }
+
+            // 构建映射
+            const result = buildKeyMap();
+            if (result && result.error) {
+                showKeyError(result.error);
+                btnError(encryptBtn);
+                return;
+            }
+
+            // 验证元素
+            const elements = splitInput(inputValue);
+            const unmatched = validateElements(elements, false);
+            if (unmatched.length > 0) {
+                showToast(`明文中出现了密钥中不存在的元素：${unmatched[0]}`);
+                btnError(encryptBtn);
+                return;
+            }
+
+            // 转换
+            const convertResult = convert(inputValue, false);
+            if (convertResult.error) {
+                showToast(`明文中出现了密钥中不存在的元素：${convertResult.element}`);
+                btnError(encryptBtn);
+                return;
+            }
+
+            cipherText.value = convertResult.result;
+        });
+    </script>
+</body>
+</html>
