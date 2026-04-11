@@ -83,7 +83,7 @@
             margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.6);
             border-radius: 12px;
-            padding: 20px;
+            padding: 12px 20px;
         }
 
         .section-title {
@@ -226,6 +226,13 @@
         .text-input.error {
             border-color: #e74c3c;
             animation: shake 0.4s ease;
+        }
+
+        .textarea-input {
+            resize: vertical;
+            min-height: 80px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .small-btn {
@@ -379,7 +386,6 @@
     <div class="container">
         <a href="../index.html" class="back-link">← 返回工具箱</a>
         <h1 class="main-title">一对一密码表</h1>
-        <div class="title-hint">填入元素时请使用空格进行分隔；若没有空格，则默认逐字符分割</div>
 
         <!-- 密钥区域 -->
         <section class="key-section">
@@ -393,24 +399,30 @@
 
         <!-- 转换区域 -->
         <section class="convert-section">
+            <h2 class="section-title">解密区域</h2>
+            <div class="checkbox-area">
+                <label>
+                    <input type="checkbox" id="caseSensitive" checked>
+                    大小写自动对应
+                </label>
+                <span class="checkbox-helper" id="caseHelper">👈取消这个按钮使大小写单独对应</span>
+            </div>
             <div class="checkbox-area">
                 <label>
                     <input type="checkbox" id="preserveUnmatched">
                     保留未匹配元素
                 </label>
-                <span class="checkbox-helper" id="checkboxHelper">可以选择这个按钮忽略密钥对中不存在的元素</span>
+                <span class="checkbox-helper" id="checkboxHelper">👈可以选择这个按钮忽略密钥对中不存在的元素</span>
             </div>
             <div class="input-row">
-                <input type="text" class="text-input" id="cipherText" placeholder="请输入密文">
-                <button class="small-btn" id="stripCipherBtn">去除空格</button>
+                <textarea class="text-input textarea-input" id="cipherText" placeholder="请输入密文" rows="3"></textarea>
             </div>
             <div class="btn-area">
                 <button class="btn btn-decrypt" id="decryptBtn">↓ 解密</button>
                 <button class="btn btn-encrypt" id="encryptBtn">↑ 加密</button>
             </div>
             <div class="input-row">
-                <input type="text" class="text-input" id="plainText" placeholder="请输入明文">
-                <button class="small-btn" id="stripPlainBtn">去除空格</button>
+                <textarea class="text-input textarea-input" id="plainText" placeholder="请输入明文" rows="3"></textarea>
             </div>
         </section>
     </div>
@@ -429,10 +441,10 @@
         const cipherText = document.getElementById('cipherText');
         const plainText = document.getElementById('plainText');
         const preserveUnmatched = document.getElementById('preserveUnmatched');
+        const caseSensitive = document.getElementById('caseSensitive');
+        const caseHelper = document.getElementById('caseHelper');
         const decryptBtn = document.getElementById('decryptBtn');
         const encryptBtn = document.getElementById('encryptBtn');
-        const stripCipherBtn = document.getElementById('stripCipherBtn');
-        const stripPlainBtn = document.getElementById('stripPlainBtn');
         const toast = document.getElementById('toast');
         const checkboxHelper = document.getElementById('checkboxHelper');
 
@@ -481,18 +493,15 @@
             }, 400);
         }
 
-        // 工具函数：分割输入内容
-        function splitInput(text) {
-            if (text.includes(' ')) {
-                return text.split(' ').filter(item => item !== '');
-            }
-            return text.split('');
+        // 工具函数：分割密钥输入（去除空格后逐字符映射）
+        function splitKeyInput(text) {
+            return text.replace(/\s+/g, '').split('');
         }
 
         // 工具函数：构建密钥映射
         function buildKeyMap() {
-            const cipherElements = splitInput(cipherInput.value);
-            const plainElements = splitInput(plainInput.value);
+            const cipherElements = splitKeyInput(cipherInput.value);
+            const plainElements = splitKeyInput(plainInput.value);
 
             if (cipherElements.length === 0 || plainElements.length === 0) {
                 return null;
@@ -505,9 +514,33 @@
             cipherToPlainMap = {};
             plainToCipherMap = {};
 
-            for (let i = 0; i < cipherElements.length; i++) {
-                cipherToPlainMap[cipherElements[i]] = plainElements[i];
-                plainToCipherMap[plainElements[i]] = cipherElements[i];
+            if (caseSensitive.checked) {
+                // 检查大小写冲突
+                for (let i = 0; i < cipherElements.length; i++) {
+                    const c = cipherElements[i];
+                    const p = plainElements[i];
+                    const cLower = c.toLowerCase();
+                    const pLower = p.toLowerCase();
+
+                    if (c !== cLower || p !== pLower) {
+                        // 含有大写字母，检查是否有对应的小写/大写映射冲突
+                        const counterpartC = cLower === c ? c.toUpperCase() : cLower;
+                        const counterpartP = pLower === p ? p.toUpperCase() : pLower;
+
+                        if (cipherToPlainMap[counterpartC] !== undefined && cipherToPlainMap[counterpartC] !== counterpartP) {
+                            return { error: '你对同一个字母进行了不同的映射！' };
+                        }
+                    }
+
+                    cipherToPlainMap[c] = p;
+                    plainToCipherMap[p] = c;
+                }
+            } else {
+                // 非大小写敏感模式，直接一一映射
+                for (let i = 0; i < cipherElements.length; i++) {
+                    cipherToPlainMap[cipherElements[i]] = plainElements[i];
+                    plainToCipherMap[plainElements[i]] = cipherElements[i];
+                }
             }
 
             return { success: true };
@@ -518,24 +551,37 @@
             return cipherInput.value.trim() !== '' && plainInput.value.trim() !== '';
         }
 
-        // 工具函数：转换文本
+        // 工具函数：转换文本（保留空格和换行，其余逐字符映射）
         function convert(text, isDecrypt) {
             const map = isDecrypt ? cipherToPlainMap : plainToCipherMap;
             const preserve = preserveUnmatched.checked;
-            const elements = splitInput(text);
             const result = [];
 
-            for (const elem of elements) {
-                if (elem in map) {
-                    result.push(map[elem]);
+            const preserveChars = new Set([' ', '\n']);
+
+            for (const char of text) {
+                if (preserveChars.has(char)) {
+                    result.push(char);
+                } else if (char in map) {
+                    result.push(map[char]);
+                } else if (caseSensitive.checked) {
+                    // 大小写敏感模式：尝试转换大小写后查找
+                    const oppositeChar = char === char.toLowerCase() ? char.toUpperCase() : char.toLowerCase();
+                    if (oppositeChar in map) {
+                        result.push(map[oppositeChar]);
+                    } else if (preserve) {
+                        result.push(char);
+                    } else {
+                        return { error: true, element: char };
+                    }
                 } else if (preserve) {
-                    result.push(elem);
+                    result.push(char);
                 } else {
-                    return { error: true, element: elem };
+                    return { error: true, element: char };
                 }
             }
 
-            return { result: result.join(' ') };
+            return { result: result.join('') };
         }
 
         // 密钥输入 - blur 验证
@@ -563,14 +609,21 @@
             }
         });
 
-        // 去除空格按钮
-        stripCipherBtn.addEventListener('click', () => {
-            cipherText.value = cipherText.value.replace(/\s+/g, '');
+        // 大小写敏感选项切换
+        caseSensitive.addEventListener('change', () => {
+            if (isKeyComplete()) {
+                const result = buildKeyMap();
+                if (result && result.error) {
+                    shakeKeyArea();
+                    showToast(result.error);
+                }
+            }
+            // 当选中时显示提示（提示取消后的效果），未选中时隐藏
+            caseHelper.classList.toggle('show', caseSensitive.checked);
         });
 
-        stripPlainBtn.addEventListener('click', () => {
-            plainText.value = plainText.value.replace(/\s+/g, '');
-        });
+        // 初始化大小写提示（默认选中，所以显示提示）
+        caseHelper.classList.add('show');
 
         // 解密按钮
         decryptBtn.addEventListener('click', () => {
