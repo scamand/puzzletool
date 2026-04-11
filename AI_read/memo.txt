@@ -103,9 +103,3 @@ puzzletool/
 - 错误效果：shake 动画（左右偏移）
 
 ---
-
-## 八、MustDo.txt 和 ToDo.txt
-
-- `MustDo.txt`：记录**每次任务前后必须执行的操作**
-- `ToDo.txt`：记录**当前任务的详细需求**
-- 两个文件均存放在项目根目录
