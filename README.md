@@ -5,7 +5,7 @@
 ## 在线访问
 
 网站已部署至 GitHub Pages，可直接访问：
-**https://[用户名].github.io/puzzletool/**
+**https://scamand.github.io/puzzletool/**
 
 ## 工具箱概览
 
