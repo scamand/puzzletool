@@ -5,13 +5,13 @@
 ## 在线访问
 
 网站已部署至 GitHub Pages，可直接访问：
-**https://scamand.github.io/puzzletool/**
+**<https://scamand.github.io/puzzletool/>**
 
 ## 工具箱概览
 
 ### 📝 文字工具
 
-- 移位
+- [移位](text-tools/shift-cipher.html)
 - [一对一密码表](text-tools/cipher-table.html)
 - 固定密码
 
@@ -27,6 +27,26 @@
 ---
 
 ## 工具功能说明
+
+### 📝 移位
+
+**功能：** 将输入的字符按照字母表顺序循环移位进行加解密。
+
+**使用方法：**
+
+1. 设置偏移量（-25 ~ 25 的整数），正数表示右移加密，负数表示左移
+2. 在密文框输入文本，点击"↓ 解密"获得明文
+3. 在明文框输入文本，点击"↑ 加密"获得密文
+
+**可选功能：**
+
+- 数字移位：勾选后 0-9 也参与循环移位
+
+**使用示例：**
+
+偏移量设置为 3，输入明文 `Hello`，加密后得到 `Khoor`
+
+---
 
 ### 📝 一对一密码表
 
@@ -59,6 +79,7 @@ puzzletool/
 ├── AI_read/                    # AI 专用文档
 │   └── memo.txt                # 开发规范
 ├── text-tools/                 # 文字工具目录
+│   ├── shift-cipher.html       # 移位
 │   └── cipher-table.html       # 一对一密码表
 ├── image-tools/                # 图像工具目录
 ├── pen-paper-tools/            # 纸笔工具目录
