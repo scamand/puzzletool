@@ -57,6 +57,90 @@
             margin-bottom: 16px;
         }
 
+        .help-icon {
+            margin-left: 16px;
+            cursor: pointer;
+            font-size: 1.4rem;
+            vertical-align: middle;
+            transition: transform 0.2s;
+        }
+
+        .help-icon:hover {
+            transform: scale(1.2);
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            z-index: 2000;
+            transition: opacity 0.3s ease, background 0.3s ease;
+        }
+
+        .modal.show {
+            visibility: visible;
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .modal:not(.show) .modal-content {
+            transform: translate(-50%, calc(-50% + 20px));
+            opacity: 0;
+        }
+
+        .modal.show .modal-content {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .modal-body p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #555;
+        }
+
         /* 标题下方提示 */
         .title-hint {
             text-align: center;
@@ -385,7 +469,7 @@
 <body>
     <div class="container">
         <a href="../index.html" class="back-link">← 返回工具箱</a>
-        <h1 class="main-title">一对一密码表</h1>
+        <h1 class="main-title">一对一密码表<span class="help-icon" id="helpBtn">🤔</span></h1>
 
         <!-- 密钥区域 -->
         <section class="key-section">
@@ -427,6 +511,21 @@
         </section>
     </div>
 
+    <!-- 使用说明弹窗 -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeModal">&times;</span>
+            <h2 class="modal-title">使用说明</h2>
+            <div class="modal-body">
+                <p><strong>密钥区域：</strong>输入加密/解密用的字符对照表。例如：ZfrA → pIuJ，表示 Z→p、f→I、r→u、A→J。</p>
+                <p><strong>大小写自动对应：</strong>勾选后，z 和 Z 视为同一字符，共享同一个映射；取消勾选后可单独设置大小写映射。</p>
+                <p><strong>保留未匹配元素：</strong>勾选后，输入中找不到对应映射的字符会原样保留；未勾选则会报错。</p>
+                <p><strong>解密区域：</strong>在密文/明文框中输入文本，点击对应按钮进行加密或解密。</p>
+                <p><strong>换行：</strong>Enter 换行，保留换行符。</p>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
@@ -435,6 +534,9 @@
            ============================================ */
 
         // DOM 元素
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementById('closeModal');
         const cipherInput = document.getElementById('cipherInput');
         const plainInput = document.getElementById('plainInput');
         const keyArea = document.getElementById('keyArea');
@@ -583,6 +685,21 @@
 
             return { result: result.join('') };
         }
+
+        // 帮助弹窗
+        helpBtn.addEventListener('click', () => {
+            helpModal.classList.add('show');
+        });
+
+        closeModal.addEventListener('click', () => {
+            helpModal.classList.remove('show');
+        });
+
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('show');
+            }
+        });
 
         // 密钥输入 - blur 验证
         cipherInput.addEventListener('blur', () => {
