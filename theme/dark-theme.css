@@ -1,0 +1,12 @@
+/* Dark Theme - 深色主题 */
+:root {
+    --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    --card: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e0e0e0;
+    --sub: #888;
+    --primary: #00d2ff;
+    --primary-glow: rgba(0, 210, 255, 0.3);
+    --accent: #00ff88;
+    --accent-glow: rgba(0, 255, 136, 0.2);
+}

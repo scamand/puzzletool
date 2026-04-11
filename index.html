@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="./things/puzzle.svg">
 <title>Puzzle苦力小工具</title>
+<link rel="stylesheet" href="theme/light-theme.css">
+<link rel="stylesheet" href="theme/dark-theme.css" id="theme-link">
 
 <style>
+/* 默认浅色主题 */
 :root {
     --bg: #f6f8fb;
     --card: #ffffff;
@@ -14,6 +17,74 @@
     --text: #1f2937;
     --sub: #6b7280;
     --primary: #3b82f6;
+}
+
+/* 深色主题覆盖 */
+[data-theme="dark"] {
+    --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    --card: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e0e0e0;
+    --sub: #888;
+    --primary: #00d2ff;
+}
+
+body[data-theme="dark"] {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+[data-theme="dark"] .tool-card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .tool-card a {
+    color: var(--text);
+}
+
+[data-theme="dark"] .tool-card:hover a {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .divider {
+    background: var(--border);
+}
+
+/* ===== 主题切换按钮 ===== */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 60px;
+    height: 32px;
+    background: var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    z-index: 1000;
+}
+
+[data-theme="dark"] .theme-toggle {
+    background: rgba(0, 210, 255, 0.2);
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 26px;
+    height: 26px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+}
+
+[data-theme="dark"] .theme-toggle-slider {
+    transform: translateX(28px);
+    background: var(--primary);
 }
 
 /* ===== 全局 ===== */
@@ -112,6 +183,11 @@ body {
 </head>
 
 <body>
+<!-- 主题切换按钮 -->
+<div class="theme-toggle" id="themeToggle" title="切换主题">
+    <div class="theme-toggle-slider"></div>
+</div>
+
 <div class="container">
 
     <div class="title">Puzzle苦力小工具</div>
@@ -160,5 +236,55 @@ body {
     </div>
 
 </div>
+
+<script>
+    const themeToggle = document.getElementById('themeToggle');
+    let isDark = false;
+    const MANUAL_OVERRIDE_KEY = 'theme_manual_override';
+
+    // 检查是否在19:00-07:00之间
+    function isNightTime() {
+        const hour = new Date().getHours();
+        return hour >= 19 || hour < 7;
+    }
+
+    // 初始化主题
+    function initTheme() {
+        const manualOverride = localStorage.getItem(MANUAL_OVERRIDE_KEY);
+
+        if (manualOverride !== null) {
+            // 用户曾手动调整，使用保存的值
+            isDark = manualOverride === 'dark';
+        } else {
+            // 自动检测时间
+            isDark = isNightTime();
+        }
+
+        document.body.setAttribute('data-theme', isDark ? 'dark' : '');
+    }
+
+    // 手动切换主题
+    themeToggle.addEventListener('click', () => {
+        isDark = !isDark;
+        document.body.setAttribute('data-theme', isDark ? 'dark' : '');
+        // 标记用户已手动调整
+        localStorage.setItem(MANUAL_OVERRIDE_KEY, isDark ? 'dark' : 'light');
+    });
+
+    // 页面可见性变化时检查（用户切换回页面）
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const manualOverride = localStorage.getItem(MANUAL_OVERRIDE_KEY);
+            // 如果用户没有手动调整过，则重新检测时间
+            if (manualOverride === null) {
+                isDark = isNightTime();
+                document.body.setAttribute('data-theme', isDark ? 'dark' : '');
+            }
+        }
+    });
+
+    // 初始化
+    initTheme();
+</script>
 </body>
 </html>

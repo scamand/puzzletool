@@ -103,3 +103,50 @@ puzzletool/
 - 错误效果：shake 动画（左右偏移）
 
 ---
+
+## 八、主题系统
+
+### 主题文件位置
+```
+puzzletool/
+├── theme/
+│   ├── light-theme.css    # 浅色主题变量
+│   ├── dark-theme.css     # 深色主题变量
+│   └── common-styles.css  # 深色主题通用样式
+├── components/
+│   └── head-template.html # 通用Head模板
+```
+
+### 通用Head模板（每个子网页都需要）
+在 `<head>` 中添加：
+```html
+<link rel="icon" type="image/svg+xml" href="../things/puzzle.svg">
+```
+
+### 深色主题配色
+- 背景：`linear-gradient(135deg, #0f0c29, #302b63, #24243e)`
+- 主色：`#00d2ff`（青色）
+- 强调色：`#00ff88`（绿色）
+- 错误色：`#ff4757`（红色）
+- 文字：`#e0e0e0`
+- 边框：`rgba(255, 255, 255, 0.08)`
+- 卡片：`rgba(255, 255, 255, 0.03)`
+
+### 深色主题输入框样式
+```css
+background: rgba(0, 0, 0, 0.3);
+border: 1px solid rgba(0, 210, 255, 0.3);
+color: #e0e0e0;
+```
+聚焦时：`border-color: #00d2ff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.3);`
+
+### OFFSET输入框
+- 禁止显示浏览器默认的上下箭头按钮
+- 使用 CSS：`appearance: textfield;` + `::-webkit-inner-spin-button { -webkit-appearance: none; }`
+
+### 主题切换（仅index.html）
+- 椭圆形滑块按钮，右上角固定位置
+- 19:00-07:00 默认深色模式，其余时间默认浅色模式
+- 用户手动切换后保存偏好到 localStorage
+
+---

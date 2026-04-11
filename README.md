@@ -75,9 +75,16 @@
 ```
 puzzletool/
 ├── index.html                  # 首页
-├── styles.css                  # 全局样式
 ├── AI_read/                    # AI 专用文档
 │   └── memo.txt                # 开发规范
+├── theme/                      # 主题文件
+│   ├── light-theme.css         # 浅色主题
+│   ├── dark-theme.css          # 深色主题
+│   └── common-styles.css       # 深色主题通用样式
+├── components/                 # 通用组件
+│   └── head-template.html      # Head模板
+├── things/                     # 静态资源
+│   └── puzzle.svg              # 网站图标
 ├── text-tools/                 # 文字工具目录
 │   ├── shift-cipher.html       # 移位
 │   └── cipher-table.html       # 一对一密码表
@@ -85,3 +92,9 @@ puzzletool/
 ├── pen-paper-tools/            # 纸笔工具目录
 └── README.md
 ```
+
+## 主题
+
+网站支持浅色/深色主题切换，默认为浅色。点击右上角的切换按钮可手动切换。
+
+深色主题会在 19:00-07:00 自动启用（仅首次访问时生效），手动切换后会记住用户偏好。

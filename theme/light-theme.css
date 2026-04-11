@@ -1,0 +1,9 @@
+/* Light Theme - 浅色主题 */
+:root {
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --sub: #6b7280;
+    --primary: #3b82f6;
+}

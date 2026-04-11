@@ -1,0 +1,96 @@
+/*
+  通用样式表 - 深色主题
+  使用方式：在各子网页的 <head> 中添加 <link rel="stylesheet" href="../theme/common-styles.css">
+
+  深色主题颜色变量：
+  --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
+  --card: rgba(255, 255, 255, 0.03)
+  --border: rgba(255, 255, 255, 0.08)
+  --text: #e0e0e0
+  --sub: #888
+  --primary: #00d2ff
+  --primary-glow: rgba(0, 210, 255, 0.3)
+  --accent: #00ff88
+  --accent-glow: rgba(0, 255, 136, 0.2)
+  --error: #ff4757
+*/
+
+/* 深色主题通用样式 */
+body.dark-theme {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #e0e0e0;
+}
+
+body.dark-theme .back-link {
+    color: #00d2ff;
+}
+
+body.dark-theme .back-link:hover {
+    color: #7df9ff;
+    text-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+}
+
+body.dark-theme .main-title {
+    color: #fff;
+    text-shadow: 0 0 12px rgba(0, 210, 255, 0.3);
+}
+
+body.dark-theme .main-panel,
+body.dark-theme .key-section,
+body.dark-theme .convert-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .modal-content {
+    background: #1a1a2e;
+    border-color: rgba(0, 210, 255, 0.2);
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.1);
+}
+
+body.dark-theme .text-input,
+body.dark-theme .key-input {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(0, 210, 255, 0.3);
+    color: #e0e0e0;
+}
+
+body.dark-theme .text-input:focus,
+body.dark-theme .key-input:focus {
+    border-color: #00d2ff;
+    box-shadow: 0 0 8px rgba(0, 210, 255, 0.3);
+}
+
+body.dark-theme .btn-decrypt {
+    background: rgba(0, 210, 255, 0.15);
+    color: #00d2ff;
+    border-color: rgba(0, 210, 255, 0.4);
+}
+
+body.dark-theme .btn-decrypt:hover {
+    background: rgba(0, 210, 255, 0.25);
+    box-shadow: 0 4px 16px rgba(0, 210, 255, 0.2);
+}
+
+body.dark-theme .btn-encrypt {
+    background: rgba(0, 255, 136, 0.12);
+    color: #00ff88;
+    border-color: rgba(0, 255, 136, 0.35);
+}
+
+body.dark-theme .btn-encrypt:hover {
+    background: rgba(0, 255, 136, 0.22);
+    box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+}
+
+body.dark-theme .checkbox-area label {
+    color: #888;
+}
+
+body.dark-theme .checkbox-area label:hover {
+    color: #bbb;
+}
+
+body.dark-theme .checkbox-area input[type="checkbox"] {
+    accent-color: #00d2ff;
+}
