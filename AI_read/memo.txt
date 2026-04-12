@@ -86,12 +86,10 @@ puzzletool/
 
 ## 六、错误处理规范
 
-用户输入错误时：
-
-- 输入框红色边框 + 抖动动画（`animation: shake 0.4s`）
-- 显示错误提示文字
+用户输入错误时需要有明确的反馈：
 - 使用 toast 弹出错误信息
-- 按钮点击失败时也触发抖动 + 变红
+- 输入框或按钮添加视觉反馈（如抖动动画、颜色变化等）
+- 规范不强制要求具体的实现方式，保持一致性即可
 
 ---
 
@@ -115,12 +113,16 @@ puzzletool/
 │   └── common-styles.css  # 深色主题通用样式
 ├── components/
 │   └── head-template.html # 通用Head模板
+├── things/                # 静态资源
+│   ├── puzzle.svg         # 网站主图标
+│   ├── shift-icon.svg     # 移位工具图标 ➡
+│   └── cipher-icon.svg    # 一对一密码表图标 1️⃣
 ```
 
 ### 通用Head模板（每个子网页都需要）
 在 `<head>` 中添加：
 ```html
-<link rel="icon" type="image/svg+xml" href="../things/puzzle.svg">
+<link rel="icon" type="image/svg+xml" href="../things/[图标名].svg">
 ```
 
 ### 深色主题配色
@@ -148,5 +150,28 @@ color: #e0e0e0;
 - 椭圆形滑块按钮，右上角固定位置
 - 19:00-07:00 默认深色模式，其余时间默认浅色模式
 - 用户手动切换后保存偏好到 localStorage
+
+---
+
+## 九、Favicon 规范
+
+每个工具页面必须有符合其功能的 emoji 图标作为 favicon。
+
+常用图标参考：
+- 首页：🧩 或 🔧
+- 移位：➡
+- 一对一密码表：1️⃣
+- 裁切：✂️
+- 拼图：🧩
+- 纸笔：📝
+
+Favicon 文件放在 `things/` 目录下，命名格式：`[工具名]-icon.svg`
+
+Favicon 内容为简单的 SVG 包含 emoji 字符：
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+  <text x="50%" y="50%" font-size="24" text-anchor="middle" dominant-baseline="central">➡</text>
+</svg>
+```
 
 ---
