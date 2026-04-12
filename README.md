@@ -13,7 +13,7 @@
 
 - [移位](text-tools/shift-cipher.html)
 - [一对一密码表](text-tools/cipher-table.html)
-- 固定密码
+- [固定密码](text-tools/fixed-password.html)
 
 ### 🖼️ 图像工具
 
@@ -70,6 +70,30 @@
 
 ---
 
+### 📝 固定密码
+
+**功能：** 集成多种经典密码系统，包括摩斯密码、旗语、猪圈密码、培根密码等。
+
+**使用方法：**
+
+1. 从上方卡片列表中选择要使用的密码类型
+2. 点击卡片后会在下方展开工作面板
+3. 面板左上角有活页本风格的标签页，右上角可关闭
+4. 点击右下角的"+"按钮可同时打开第二个工具面板（最多支持两个）
+
+**支持的密码类型：**
+
+- 摩斯密码 📡
+- 旗语 🚩
+- 猪圈密码 ⬛
+- 培根密码 BA
+- ROT13 🔄
+- A1Z26 🔢
+- 二进制 💻
+- 十六进制 🔤
+
+---
+
 ## 文件结构
 
 ```
@@ -84,10 +108,14 @@ puzzletool/
 ├── components/                 # 通用组件
 │   └── head-template.html      # Head模板
 ├── things/                     # 静态资源
-│   └── puzzle.svg              # 网站图标
+│   ├── puzzle.svg              # 网站图标
+│   ├── shift-icon.svg          # 移位图标
+│   ├── cipher-icon.svg         # 一对一密码表图标
+│   └── fixed-icon.svg         # 固定密码图标
 ├── text-tools/                 # 文字工具目录
 │   ├── shift-cipher.html       # 移位
-│   └── cipher-table.html       # 一对一密码表
+│   ├── cipher-table.html       # 一对一密码表
+│   └── fixed-password.html     # 固定密码
 ├── image-tools/                # 图像工具目录
 ├── pen-paper-tools/            # 纸笔工具目录
 └── README.md
