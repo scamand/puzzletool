@@ -1,290 +1,167 @@
-<!DOCTYPE html>
-<html lang="zh">
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+    (function () {
+        var key = "theme_manual_override";
+        var theme = null;
+        try {
+            var saved = window.localStorage.getItem(key);
+            if (saved === "light" || saved === "dark") theme = saved;
+        } catch (_) {}
+        if (!theme) {
+            var hour = new Date().getHours();
+            theme = (hour >= 19 || hour < 7) ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+    })();
+</script>
 <link rel="icon" type="image/svg+xml" href="./things/puzzle.svg">
 <title>Puzzle苦力小工具</title>
 <link rel="stylesheet" href="theme/light-theme.css">
-<link rel="stylesheet" href="theme/dark-theme.css" id="theme-link">
-
+<link rel="stylesheet" href="theme/dark-theme.css">
+<link rel="stylesheet" href="theme/common-styles.css">
 <style>
-/* 默认浅色主题 */
-:root {
-    --bg: #f6f8fb;
-    --card: #ffffff;
-    --border: #e5e7eb;
-    --text: #1f2937;
-    --sub: #6b7280;
-    --primary: #3b82f6;
-}
+    .home-shell {
+        width: min(980px, calc(100% - 26px));
+        margin: 0 auto;
+        padding: 30px 0 38px;
+    }
 
-/* 深色主题覆盖 */
-[data-theme="dark"] {
-    --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    --card: rgba(255, 255, 255, 0.03);
-    --border: rgba(255, 255, 255, 0.08);
-    --text: #e0e0e0;
-    --sub: #888;
-    --primary: #00d2ff;
-}
-
-body[data-theme="dark"] {
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-}
-
-[data-theme="dark"] .tool-card {
-    background: var(--card);
-    border-color: var(--border);
-}
-
-[data-theme="dark"] .tool-card a {
-    color: var(--text);
-}
-
-[data-theme="dark"] .tool-card:hover a {
-    color: var(--primary);
-}
-
-[data-theme="dark"] .divider {
-    background: var(--border);
-}
-
-/* ===== 主题切换按钮 ===== */
-.theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 60px;
-    height: 32px;
-    background: var(--border);
-    border-radius: 16px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    z-index: 1000;
-}
-
-[data-theme="dark"] .theme-toggle {
-    background: rgba(0, 210, 255, 0.2);
-}
-
-.theme-toggle-slider {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 26px;
-    height: 26px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
-}
-
-[data-theme="dark"] .theme-toggle-slider {
-    transform: translateX(28px);
-    background: var(--primary);
-}
-
-/* ===== 全局 ===== */
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-}
-
-.container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 24px 16px 40px;
-}
-
-/* ===== 标题 ===== */
-.title {
-    text-align: center;
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 32px;
-}
-
-/* ===== 分区 ===== */
-.section {
-    margin-bottom: 32px;
-}
-
-.section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 16px;
-}
-
-.section-header span {
-    font-size: 22px;
-}
-
-/* 分割线 */
-.divider {
-    height: 1px;
-    background: var(--border);
-    margin: 32px 0;
-}
-
-/* ===== 工具列表 ===== */
-.tool-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-}
-
-/* ===== 工具卡片 ===== */
-.tool-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 12px;
-    text-align: center;
-    cursor: pointer;
-
-    transition: all 0.2s ease;
-}
-
-.tool-card a {
-    text-decoration: none;
-    color: var(--text);
-    display: block;
-}
-
-/* hover效果 */
-.tool-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-
-.tool-card:hover a {
-    color: var(--primary);
-}
-
-/* ===== 移动端优化 ===== */
-@media (max-width: 600px) {
     .title {
-        font-size: 26px;
+        text-align: center;
+        font-size: clamp(1.9rem, 1.2rem + 1.8vw, 2.5rem);
+        color: var(--title-main);
+        text-shadow: 0 0 16px var(--title-glow);
+        margin: 8px 0 30px;
+        letter-spacing: 0.7px;
+    }
+
+    .section {
+        margin-bottom: 30px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        color: var(--text-main);
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .divider {
+        height: 1px;
+        margin: 28px 0;
+        background: var(--line);
     }
 
     .tool-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
     }
-}
+
+    .tool-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface-2);
+        box-shadow: none;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+    }
+
+    .tool-card a {
+        display: block;
+        padding: 14px 12px;
+        text-decoration: none;
+        color: var(--text-main);
+        text-align: center;
+        min-height: 44px;
+    }
+
+    .tool-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--line-strong);
+        box-shadow: var(--shadow-1);
+        background: color-mix(in srgb, var(--surface-2) 86%, var(--primary-soft));
+    }
+
+    .tool-card:active {
+        transform: translateY(0) scale(0.985);
+        background: color-mix(in srgb, var(--surface-2) 74%, var(--primary-soft));
+    }
+
+    .tool-card:hover a {
+        color: color-mix(in srgb, var(--primary) 78%, white 22%);
+    }
+
+    @media (max-width: 620px) {
+        .home-shell {
+            width: calc(100% - 20px);
+            padding-top: 24px;
+        }
+
+        .tool-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
 </style>
 </head>
-
 <body>
-<!-- 主题切换按钮 -->
-<div class="theme-toggle" id="themeToggle" title="切换主题">
-    <div class="theme-toggle-slider"></div>
-</div>
+<button class="theme-toggle" id="themeToggle" title="切换主题" aria-label="切换主题" aria-pressed="false">
+    <span class="theme-toggle-slider"></span>
+</button>
 
-<div class="container">
+<div class="home-shell">
+    <h1 class="title">Puzzle苦力小工具</h1>
 
-    <div class="title">Puzzle苦力小工具</div>
-
-    <!-- ===== 文字工具 ===== -->
-    <div class="section">
+    <section class="section">
         <div class="section-header">
             <span>🔠</span>
             <div>文字工具</div>
         </div>
-
         <div class="tool-grid">
             <div class="tool-card"><a href="text-tools/shift-cipher.html">移位</a></div>
             <div class="tool-card"><a href="text-tools/cipher-table.html">一对一密码表</a></div>
             <div class="tool-card"><a href="text-tools/fixed-password.html">固定密码</a></div>
         </div>
-    </div>
+    </section>
 
     <div class="divider"></div>
 
-    <!-- ===== 图像工具 ===== -->
-    <div class="section">
+    <section class="section">
         <div class="section-header">
             <span>🖼️</span>
             <div>图像工具</div>
         </div>
-
         <div class="tool-grid">
             <div class="tool-card"><a href="#">裁切</a></div>
             <div class="tool-card"><a href="#">拼图</a></div>
         </div>
-    </div>
+    </section>
 
     <div class="divider"></div>
 
-    <!-- ===== 纸笔工具 ===== -->
-    <div class="section">
+    <section class="section">
         <div class="section-header">
             <span>📝</span>
             <div>纸笔工具</div>
         </div>
-
         <div class="tool-grid">
             <div class="tool-card"><a href="#">自创纸笔</a></div>
         </div>
-    </div>
-
+    </section>
 </div>
 
+<script src="theme/theme-system.js"></script>
 <script>
-    const themeToggle = document.getElementById('themeToggle');
-    let isDark = false;
-    const MANUAL_OVERRIDE_KEY = 'theme_manual_override';
-
-    // 检查是否在19:00-07:00之间
-    function isNightTime() {
-        const hour = new Date().getHours();
-        return hour >= 19 || hour < 7;
-    }
-
-    // 初始化主题
-    function initTheme() {
-        const manualOverride = localStorage.getItem(MANUAL_OVERRIDE_KEY);
-
-        if (manualOverride !== null) {
-            // 用户曾手动调整，使用保存的值
-            isDark = manualOverride === 'dark';
-        } else {
-            // 自动检测时间
-            isDark = isNightTime();
-        }
-
-        document.body.setAttribute('data-theme', isDark ? 'dark' : '');
-    }
-
-    // 手动切换主题
-    themeToggle.addEventListener('click', () => {
-        isDark = !isDark;
-        document.body.setAttribute('data-theme', isDark ? 'dark' : '');
-        // 标记用户已手动调整
-        localStorage.setItem(MANUAL_OVERRIDE_KEY, isDark ? 'dark' : 'light');
+    initThemeManager({
+        allowToggle: true,
+        toggleSelector: "#themeToggle"
     });
-
-    // 页面可见性变化时检查（用户切换回页面）
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            const manualOverride = localStorage.getItem(MANUAL_OVERRIDE_KEY);
-            // 如果用户没有手动调整过，则重新检测时间
-            if (manualOverride === null) {
-                isDark = isNightTime();
-                document.body.setAttribute('data-theme', isDark ? 'dark' : '');
-            }
-        }
-    });
-
-    // 初始化
-    initTheme();
 </script>
 </body>
 </html>

@@ -1,9 +1,27 @@
-/* Light Theme - 浅色主题 */
-:root {
-    --bg: #f6f8fb;
-    --card: #ffffff;
-    --border: #e5e7eb;
-    --text: #1f2937;
-    --sub: #6b7280;
-    --primary: #3b82f6;
+﻿/* Light Theme Tokens */
+:root,
+[data-theme="light"] {
+    color-scheme: light;
+    --bg-gradient: linear-gradient(180deg, #e3677eef 0%, #cd8668ef 100%);
+    --bg-solid: #fffffff2;
+    --surface-1: #fffffff2;
+    --surface-2: #ffffff9d;
+    --surface-3: #fffffff2;
+    --line: rgba(21, 38, 74, 0.12);
+    --line-strong: rgba(35, 61, 108, 0.24);
+    --text-main: #162033;
+    --text-sub: #5b6985;
+    --title-main: #1b2a45;
+    --title-glow: #1b2a45c7;
+    --primary: #2b75ff;
+    --primary-soft: rgba(43, 117, 255, 0.12);
+    --primary-glow: rgba(22, 40, 75, 0.2);
+    --accent: #11b883;
+    --danger: #e44d5f;
+    --danger-soft: rgba(228, 77, 95, 0.14);
+    --toast-bg: rgba(248, 252, 255, 0.95);
+    --toast-text: #0f213f;
+    --shadow-1: 0 16px 34px rgba(31, 55, 96, 0.12);
+    --shadow-2: 0 24px 48px rgba(21, 39, 78, 0.16);
+    --focus-ring: 0 0 0 3px rgba(43, 117, 255, 0.22);
 }

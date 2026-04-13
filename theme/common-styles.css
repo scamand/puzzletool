@@ -1,96 +1,296 @@
-/*
-  通用样式表 - 深色主题
-  使用方式：在各子网页的 <head> 中添加 <link rel="stylesheet" href="../theme/common-styles.css">
-
-  深色主题颜色变量：
-  --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
-  --card: rgba(255, 255, 255, 0.03)
-  --border: rgba(255, 255, 255, 0.08)
-  --text: #e0e0e0
-  --sub: #888
-  --primary: #00d2ff
-  --primary-glow: rgba(0, 210, 255, 0.3)
-  --accent: #00ff88
-  --accent-glow: rgba(0, 255, 136, 0.2)
-  --error: #ff4757
-*/
-
-/* 深色主题通用样式 */
-body.dark-theme {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #e0e0e0;
+﻿/* Unified Common Styles */
+* {
+    box-sizing: border-box;
 }
 
-body.dark-theme .back-link {
-    color: #00d2ff;
+html,
+body {
+    margin: 0;
+    padding: 0;
 }
 
-body.dark-theme .back-link:hover {
-    color: #7df9ff;
-    text-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+body {
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+    color: var(--text-main);
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
-body.dark-theme .main-title {
-    color: #fff;
-    text-shadow: 0 0 12px rgba(0, 210, 255, 0.3);
+a {
+    color: inherit;
 }
 
-body.dark-theme .main-panel,
-body.dark-theme .key-section,
-body.dark-theme .convert-section {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
+.container {
+    width: min(900px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 22px 0 36px;
 }
 
-body.dark-theme .modal-content {
-    background: #1a1a2e;
-    border-color: rgba(0, 210, 255, 0.2);
-    box-shadow: 0 0 30px rgba(0, 210, 255, 0.1);
+.container.tool-container {
+    width: min(700px, calc(100% - 28px));
 }
 
-body.dark-theme .text-input,
-body.dark-theme .key-input {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgba(0, 210, 255, 0.3);
-    color: #e0e0e0;
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+    background: color-mix(in srgb, var(--surface-1) 74%, transparent);
+    transition: transform 0.24s ease, background-color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
 }
 
-body.dark-theme .text-input:focus,
-body.dark-theme .key-input:focus {
-    border-color: #00d2ff;
-    box-shadow: 0 0 8px rgba(0, 210, 255, 0.3);
+.back-link:hover {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-1));
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-glow) 34%, transparent);
 }
 
-body.dark-theme .btn-decrypt {
-    background: rgba(0, 210, 255, 0.15);
-    color: #00d2ff;
-    border-color: rgba(0, 210, 255, 0.4);
+.back-link:active {
+    transform: translateY(0) scale(0.98);
 }
 
-body.dark-theme .btn-decrypt:hover {
-    background: rgba(0, 210, 255, 0.25);
-    box-shadow: 0 4px 16px rgba(0, 210, 255, 0.2);
+.main-title {
+    text-align: center;
+    margin: 14px 0 22px;
+    color: var(--title-main);
+    text-shadow: 0 0 12px var(--title-glow);
+    letter-spacing: 0.9px;
+    font-weight: 700;
 }
 
-body.dark-theme .btn-encrypt {
-    background: rgba(0, 255, 136, 0.12);
-    color: #00ff88;
-    border-color: rgba(0, 255, 136, 0.35);
+.main-panel,
+.key-section,
+.convert-section,
+.glass-panel {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow-1);
 }
 
-body.dark-theme .btn-encrypt:hover {
-    background: rgba(0, 255, 136, 0.22);
-    box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+.text-input,
+.key-input,
+.search-input,
+.input-field,
+.text-output,
+.rail-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface-3);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.93rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-body.dark-theme .checkbox-area label {
-    color: #888;
+.text-input::placeholder,
+.key-input::placeholder,
+.search-input::placeholder {
+    color: color-mix(in srgb, var(--text-sub) 86%, transparent);
 }
 
-body.dark-theme .checkbox-area label:hover {
-    color: #bbb;
+.text-input:focus,
+.key-input:focus,
+.search-input:focus,
+.input-field:focus,
+.text-output:focus,
+.rail-input:focus {
+    border-color: color-mix(in srgb, var(--primary) 78%, white 22%);
+    box-shadow: var(--focus-ring);
 }
 
-body.dark-theme .checkbox-area input[type="checkbox"] {
-    accent-color: #00d2ff;
+.btn,
+button,
+.icon-btn,
+.action-btn,
+.theme-toggle {
+    font-family: inherit;
+}
+
+.btn,
+.icon-btn,
+.action-btn {
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+    background: color-mix(in srgb, var(--primary-soft) 74%, transparent);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover,
+.icon-btn:hover,
+.action-btn:hover {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 54%, transparent);
+    box-shadow: 0 10px 20px color-mix(in srgb, var(--primary-glow) 24%, transparent);
+}
+
+.btn:active,
+.icon-btn:active,
+.action-btn:active,
+.theme-toggle:active {
+    transform: translateY(0) scale(0.98);
+    filter: brightness(0.95);
+}
+
+.btn-decrypt {
+    color: color-mix(in srgb, var(--primary) 80%, white 20%);
+    border-color: color-mix(in srgb, var(--primary) 58%, transparent);
+    background: color-mix(in srgb, var(--primary-soft) 84%, transparent);
+}
+
+.btn-encrypt {
+    color: color-mix(in srgb, var(--accent) 74%, white 26%);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 17%, transparent);
+}
+
+.btn.error,
+.action-btn.warn,
+.icon-btn.close,
+button.warn {
+    color: color-mix(in srgb, var(--danger) 72%, white 28%);
+    border-color: color-mix(in srgb, var(--danger) 54%, transparent);
+    background: var(--danger-soft);
+}
+
+.shake,
+.text-input.error,
+.key-input.error,
+.btn.error,
+.error-shake {
+    animation: shake 0.25s linear;
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(18px);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow-1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.26s ease, transform 0.26s ease;
+    z-index: 2100;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.modal {
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: opacity 0.28s ease, background-color 0.28s ease;
+    z-index: 2000;
+}
+
+.modal.show {
+    visibility: visible;
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.68);
+}
+
+.modal-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100% - 26px));
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 22px;
+    border-radius: 14px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-2);
+}
+
+.modal:not(.show) .modal-content {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 20px));
+}
+
+.modal.show .modal-content {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+    transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 60px;
+    height: 32px;
+    border-radius: 16px;
+    border: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+    cursor: pointer;
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    z-index: 2100;
+}
+
+.theme-toggle:hover {
+    box-shadow: 0 10px 18px color-mix(in srgb, var(--primary-glow) 26%, transparent);
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #ea4e7def, #ff6d87ef);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.28s ease;
+}
+
+[data-theme="dark"] .theme-toggle-slider {
+    transform: translateX(28px);
+    background: linear-gradient(180deg, #8ff0ff, #00d2ff);
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+}
+
+@media (max-width: 700px) {
+    .container,
+    .container.tool-container {
+        width: calc(100% - 20px);
+    }
+
+    .theme-toggle {
+        top: 12px;
+        right: 12px;
+    }
 }

@@ -1,12 +1,26 @@
-/* Dark Theme - 深色主题 */
-:root {
-    --bg: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    --card: rgba(255, 255, 255, 0.03);
-    --border: rgba(255, 255, 255, 0.08);
-    --text: #e0e0e0;
-    --sub: #888;
+﻿/* Dark Theme Tokens */
+[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    --bg-solid: #17162a;
+    --surface-1: rgba(255, 255, 255, 0.06);
+    --surface-2: rgba(255, 255, 255, 0.03);
+    --surface-3: rgba(18, 18, 32, 0.48);
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(0, 210, 255, 0.34);
+    --text-main: #e0e6f2;
+    --text-sub: #99a4be;
+    --title-main: #f2fbff;
+    --title-glow: rgba(0, 210, 255, 0.3);
     --primary: #00d2ff;
+    --primary-soft: rgba(0, 210, 255, 0.14);
     --primary-glow: rgba(0, 210, 255, 0.3);
     --accent: #00ff88;
-    --accent-glow: rgba(0, 255, 136, 0.2);
+    --danger: #ff5f73;
+    --danger-soft: rgba(255, 95, 115, 0.16);
+    --toast-bg: rgba(14, 18, 33, 0.94);
+    --toast-text: #e6f8ff;
+    --shadow-1: 0 18px 36px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 26px 52px rgba(0, 0, 0, 0.46);
+    --focus-ring: 0 0 0 3px rgba(0, 210, 255, 0.26);
 }
