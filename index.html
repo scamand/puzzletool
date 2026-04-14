@@ -61,41 +61,54 @@
 
     .tool-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        justify-content: start;
+        gap: 10px;
     }
 
     .tool-card {
         border: 1px solid var(--line);
         border-radius: 12px;
-        background: var(--surface-2);
-        box-shadow: none;
-        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+        background: var(--surface-3);
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .tool-card a {
         display: block;
-        padding: 14px 12px;
+        padding: 11px;
         text-decoration: none;
         color: var(--text-main);
-        text-align: center;
-        min-height: 44px;
+        min-height: 104px;
     }
 
     .tool-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-6px);
         border-color: var(--line-strong);
-        box-shadow: var(--shadow-1);
-        background: color-mix(in srgb, var(--surface-2) 86%, var(--primary-soft));
+        box-shadow: 0 16px 48px 8px color-mix(in srgb, var(--primary-glow) 24%, transparent);
+    }
+
+    [data-theme="light"] .tool-card:hover {
+        box-shadow: 0 8px 48px 8px rgba(0, 0, 0, 0.13);
+        /* inset(上 右 下 左)：上边缘贴齐元素，其余往外扩60px，保证阴影不出现在卡片上方 */
+        clip-path: inset(0 -60px -60px -60px round 12px);
     }
 
     .tool-card:active {
         transform: translateY(0) scale(0.985);
-        background: color-mix(in srgb, var(--surface-2) 74%, var(--primary-soft));
     }
 
-    .tool-card:hover a {
-        color: color-mix(in srgb, var(--primary) 78%, white 22%);
+    .tool-head {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .tool-desc {
+        font-size: 0.78rem;
+        color: var(--text-sub);
+        line-height: 1.38;
     }
 
     @media (max-width: 620px) {
@@ -105,7 +118,7 @@
         }
 
         .tool-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         }
     }
 </style>
@@ -124,9 +137,18 @@
             <div>文字工具</div>
         </div>
         <div class="tool-grid">
-            <div class="tool-card"><a href="text-tools/shift-cipher.html">移位</a></div>
-            <div class="tool-card"><a href="text-tools/cipher-table.html">一对一密码表</a></div>
-            <div class="tool-card"><a href="text-tools/fixed-password.html">固定密码</a></div>
+            <div class="tool-card"><a href="text-tools/fixed-password.html">
+                <div class="tool-head"><span>🔐</span><span>固定密码</span></div>
+                <div class="tool-desc">摩斯、栅栏、培根等经典密码。</div>
+            </a></div>
+            <div class="tool-card"><a href="text-tools/shift-cipher.html">
+                <div class="tool-head"><span>➡</span><span>移位</span></div>
+                <div class="tool-desc">凯撒移位，字母按偏移量替换。</div>
+            </a></div>
+            <div class="tool-card"><a href="text-tools/cipher-table.html">
+                <div class="tool-head"><span>1️⃣</span><span>自定义密码表</span></div>
+                <div class="tool-desc">自定义字符映射，逐元素互译。</div>
+            </a></div>
         </div>
     </section>
 
@@ -138,8 +160,14 @@
             <div>图像工具</div>
         </div>
         <div class="tool-grid">
-            <div class="tool-card"><a href="#">裁切</a></div>
-            <div class="tool-card"><a href="#">拼图</a></div>
+            <div class="tool-card"><a href="#">
+                <div class="tool-head"><span>✂️</span><span>裁切</span></div>
+                <div class="tool-desc">按坐标裁切图像区域。</div>
+            </a></div>
+            <div class="tool-card"><a href="#">
+                <div class="tool-head"><span>🧩</span><span>拼图</span></div>
+                <div class="tool-desc">图像拼图辅助工具。</div>
+            </a></div>
         </div>
     </section>
 
@@ -151,7 +179,10 @@
             <div>纸笔工具</div>
         </div>
         <div class="tool-grid">
-            <div class="tool-card"><a href="#">自创纸笔</a></div>
+            <div class="tool-card"><a href="#">
+                <div class="tool-head"><span>📝</span><span>自创纸笔</span></div>
+                <div class="tool-desc">自定义纸笔密码辅助。</div>
+            </a></div>
         </div>
     </section>
 </div>

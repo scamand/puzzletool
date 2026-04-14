@@ -12,7 +12,7 @@
 ### 📝 文字工具
 
 - [移位](text-tools/shift-cipher.html)
-- [一对一密码表](text-tools/cipher-table.html)
+- [自定义密码表](text-tools/cipher-table.html)
 - [固定密码](text-tools/fixed-password.html)
 
 ### 🖼️ 图像工具
@@ -48,7 +48,7 @@
 
 ---
 
-### 📝 一对一密码表
+### 📝 自定义密码表
 
 **功能：** 根据自定义的密文-明文对照表进行加解密。
 
@@ -112,11 +112,11 @@ puzzletool/
 ├── things/                     # 静态资源
 │   ├── puzzle.svg              # 网站图标
 │   ├── shift-icon.svg          # 移位图标
-│   ├── cipher-icon.svg         # 一对一密码表图标
+│   ├── cipher-icon.svg         # 自定义密码表图标
 │   └── fixed-icon.svg         # 固定密码图标
 ├── text-tools/                 # 文字工具目录
 │   ├── shift-cipher.html       # 移位
-│   ├── cipher-table.html       # 一对一密码表
+│   ├── cipher-table.html       # 自定义密码表
 │   └── fixed-password.html     # 固定密码
 ├── image-tools/                # 图像工具目录
 ├── pen-paper-tools/            # 纸笔工具目录

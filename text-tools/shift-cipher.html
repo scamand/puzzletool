@@ -24,30 +24,6 @@
     <link rel="stylesheet" href="../theme/dark-theme.css">
     <link rel="stylesheet" href="../theme/common-styles.css">
     <style>
-        .tool-title-wrap {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .help-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid var(--line-strong);
-            background: var(--primary-soft);
-            cursor: pointer;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
-
-        .help-icon:hover {
-            transform: translateY(-2px) scale(1.04);
-            background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
-        }
 
         .main-panel {
             padding: 18px;
@@ -156,10 +132,10 @@
     </style>
 </head>
 <body>
-    <div class="container tool-container">
+    <div class="container tool-container page-enter">
         <a href="../index.html" class="back-link">← 返回工具箱</a>
         <h1 class="main-title">
-            <span class="tool-title-wrap">SHIFT<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span>
+            <span class="title-wrap">SHIFT<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span>
         </h1>
 
         <div class="main-panel" id="mainPanel">

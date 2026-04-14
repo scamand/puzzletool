@@ -3,18 +3,22 @@
     box-sizing: border-box;
 }
 
-html,
-body {
+html {
     margin: 0;
     padding: 0;
+    height: 100vh;
+    overflow: hidden; /* html 层不出现滚动条，防止页面动画期间横向抖动 */
 }
 
 body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow-y: auto;  /* body 承担滚动，固定密码多行时可正常滚动 */
     font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     line-height: 1.6;
     color: var(--text-main);
     background: var(--bg-gradient);
-    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -281,6 +285,42 @@ button.warn {
     50% { transform: translateX(4px); }
     75% { transform: translateX(-4px); }
     100% { transform: translateX(0); }
+}
+
+/* ── 页面入场动画（任意工具页挂 .page-enter 即可）────────── */
+@keyframes pageEnter {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+    animation: pageEnter 0.34s ease both;
+}
+
+/* ── 标题行（工具名 + 帮助按钮）────────────────────────────── */
+.title-wrap {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--primary-soft);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.help-icon:hover {
+    transform: translateY(-2px) scale(1.04);
+    background: color-mix(in srgb, var(--primary-soft) 86%, transparent);
 }
 
 @media (max-width: 700px) {
