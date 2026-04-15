@@ -13,7 +13,7 @@
 
 - [移位](text-tools/shift-cipher.html)
 - [自定义密码表](text-tools/cipher-table.html)
-- [固定密码](text-tools/fixed-password.html)
+- [固定密码](text-tools/fixed-cipher.html)
 
 ### 🖼️ 图像工具
 
@@ -117,7 +117,18 @@ puzzletool/
 ├── text-tools/                 # 文字工具目录
 │   ├── shift-cipher.html       # 移位
 │   ├── cipher-table.html       # 自定义密码表
-│   └── fixed-password.html     # 固定密码
+│   ├── fixed-cipher.html       # 固定密码主页面
+│   └── fixed-tools/            # 固定密码拆分模块
+│       ├── main.js             # 卡片工作台主控
+│       ├── registry.js         # 工具注册表
+│       ├── tool-utils.js       # 公共转换与UI辅助
+│       ├── morse.js            # 摩斯密码
+│       ├── rail-fence.js       # 栅栏密码
+│       ├── bacon.js            # 培根密码
+│       ├── rot13.js            # ROT13
+│       ├── a1z26.js            # A1Z26
+│       ├── binary.js           # 二进制 ASCII
+│       └── hex.js              # 十六进制 ASCII
 ├── image-tools/                # 图像工具目录
 ├── pen-paper-tools/            # 纸笔工具目录
 └── README.md

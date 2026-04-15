@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            var key = "theme_manual_override";
+            var theme = null;
+            try {
+                var saved = window.localStorage.getItem(key);
+                if (saved === "light" || saved === "dark") theme = saved;
+            } catch (_) {}
+            if (!theme) {
+                var hour = new Date().getHours();
+                theme = (hour >= 19 || hour < 7) ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="../things/fixed-icon.svg">
+    <title>固定密码</title>
+    <link rel="stylesheet" href="../theme/light-theme.css">
+    <link rel="stylesheet" href="../theme/dark-theme.css">
+    <link rel="stylesheet" href="../theme/common-styles.css">
+    <style>
+        .fixed-shell{width:min(1320px,calc(100% - 24px));margin:0 auto;padding:14px 0 24px}
+        .main-title{color:var(--title-main);text-shadow:0 0 20px var(--title-glow);margin-bottom:16px}
+        .cards-stage{position:relative;padding:16px;border-radius:16px}
+        .cards-root{display:flex;flex-direction:column;gap:16px;min-height:calc(100vh - 230px)}
+        .cards-row{display:flex;gap:16px}
+        .tool-card{flex:1;min-height:620px;border-radius:16px;border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--shadow-1);overflow:visible;animation:cardEnter .34s ease both;position:relative}
+        .card-content{height:100%;display:flex;flex-direction:column;animation:contentFade .24s ease;border-radius:inherit;overflow:hidden}
+        .view-header,.pane-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+        .glow-head{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--primary) 34%,transparent);background:color-mix(in srgb,var(--primary-soft) 70%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 22%,transparent)}
+        .glow-head-title{font-size:.95rem;color:color-mix(in srgb,var(--primary) 72%,white 28%);font-weight:600}
+        .mini-btn{min-height:34px;padding:0 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--primary) 36%,transparent);background:color-mix(in srgb,var(--surface-1) 86%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
+        .mini-btn:hover{transform:translateY(-2px);background:color-mix(in srgb,var(--primary-soft) 70%,transparent)}
+        .mini-btn:active{transform:translateY(0) scale(.98)}
+        .close-btn{min-width:44px;min-height:44px;border-radius:10px;border:1px solid color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%);cursor:pointer;transition:transform .2s ease,filter .2s ease}
+        .close-btn:hover{transform:translateY(-2px);filter:brightness(1.04)}
+        .close-btn.hidden{display:none}
+        .select-body,.pane-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;overflow-y:auto}
+        .search-wrap{position:relative}
+        .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-sub);pointer-events:none}
+        .search-input{padding-left:36px}
+        .tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start}
+        .tool-picker{border:1px solid var(--line);background:var(--surface-3);color:var(--text-main);border-radius:12px;text-align:left;padding:11px;cursor:pointer;min-height:104px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+        .tool-picker:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 12px 20px color-mix(in srgb,var(--primary-glow) 18%,transparent)}
+        .picker-head{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:4px}
+        .picker-desc{font-size:.78rem;color:var(--text-sub);line-height:1.38;margin-bottom:4px}
+        .picker-tags{font-size:.72rem;color:color-mix(in srgb,var(--primary) 72%,white 28%)}
+        .panel-note{border:1px solid color-mix(in srgb,var(--primary) 32%,transparent);background:color-mix(in srgb,var(--primary-soft) 74%,transparent);color:var(--text-main);border-radius:10px;padding:10px 12px;font-size:.82rem;line-height:1.46}
+        .stack{display:grid;gap:12px}
+        .input-label{display:block;margin-bottom:6px;color:var(--text-sub);font-size:.82rem}
+        .text-input,.text-output{min-height:108px;resize:vertical}
+        .text-output[readonly]{color:var(--text-main)}
+        .rail-input{min-height:44px;max-width:140px;appearance:textfield;resize:none}
+        .rail-input::-webkit-inner-spin-button,.rail-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+        .controls-row{display:flex;flex-wrap:wrap;gap:9px}
+        .action-btn.warn{border-color:color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%)}
+        .tool-empty{text-align:center;color:var(--text-sub);padding:28px 10px}
+
+        /* 每张卡片四周的悬停感应区 */
+        .card-edge-sensor{position:absolute;z-index:20;opacity:0;pointer-events:auto}
+        .card-edge-sensor[data-edge="left"]{top:15%;bottom:15%;left:-14px;width:28px;cursor:w-resize}
+        .card-edge-sensor[data-edge="right"]{top:15%;bottom:15%;right:-14px;width:28px;cursor:e-resize}
+        .card-edge-sensor[data-edge="top"]{left:15%;right:15%;top:-14px;height:28px;cursor:n-resize}
+        .card-edge-sensor[data-edge="bottom"]{left:15%;right:15%;bottom:-14px;height:28px;cursor:s-resize}
+
+        /* 全局浮动加号按钮 */
+        .edge-add-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid color-mix(in srgb,var(--primary) 60%,transparent);background:color-mix(in srgb,var(--primary-soft) 90%,transparent);color:color-mix(in srgb,var(--primary) 80%,white 20%);font-size:1.6rem;line-height:1;cursor:pointer;z-index:40;opacity:0;pointer-events:none;transform:scale(.82);transition:opacity .18s ease,transform .2s ease,background-color .18s ease;box-shadow:0 6px 20px color-mix(in srgb,var(--primary-glow) 28%,transparent);display:flex;align-items:center;justify-content:center}
+        .edge-add-btn.show{opacity:1;pointer-events:auto;transform:scale(1)}
+        .edge-add-btn:hover{background:color-mix(in srgb,var(--primary-soft) 100%,transparent);transform:scale(1.08)}
+        .edge-add-btn:active{transform:scale(.94);filter:brightness(.92)}
+
+        .mobile-add-wrap{display:none;margin-top:10px;justify-content:center}
+        .mobile-add-btn{min-height:46px;min-width:160px;border-radius:999px;border:1px solid color-mix(in srgb,var(--primary) 50%,transparent);background:color-mix(in srgb,var(--primary-soft) 82%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
+        .mobile-add-btn:hover{transform:translateY(-2px)}
+        .mobile-add-btn:active{transform:translateY(0) scale(.98);filter:brightness(.95)}
+        .mobile-add-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .modal-close{position:absolute;top:10px;right:12px;font-size:1.5rem;cursor:pointer;color:var(--text-sub);transition:color .2s ease}
+        .modal-close:hover{color:var(--danger)}
+        .modal-title{margin:0 0 10px;color:var(--text-main)}
+        .modal-body p{margin:0 0 8px;color:var(--text-sub)}
+
+        @keyframes cardEnter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes contentFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        @media (max-width:840px){
+            .fixed-shell{width:calc(100% - 14px)}
+            .cards-row{flex-direction:column}
+            .tool-card{min-height:540px}
+            .card-edge-sensor,.edge-add-btn{display:none}
+            .mobile-add-wrap{display:flex}
+        }
+    </style>
+</head>
+<body>
+<div class="fixed-shell page-enter">
+    <a href="../index.html" class="back-link">← 返回工具箱</a>
+    <h1 class="main-title"><span class="title-wrap">固定密码<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span></h1>
+    <div class="cards-stage" id="cardsStage">
+        <button class="edge-add-btn" id="edgeAddBtn" type="button" title="添加卡片">+</button>
+        <div class="cards-root" id="cardsRoot"></div>
+    </div>
+    <div class="mobile-add-wrap">
+        <button class="mobile-add-btn" id="mobileAddBtn" type="button">+ 添加卡片</button>
+    </div>
+</div>
+<div class="modal" id="helpModal">
+    <div class="modal-content">
+        <span class="modal-close" id="closeModal">&times;</span>
+        <h2 class="modal-title">使用说明</h2>
+        <div class="modal-body">
+            <p>1. 在卡片中搜索并选择需要的固定密码工具。</p>
+            <p>2. 鼠标移到卡片的上、下、左、右边缘，出现"+"时点击可在对应方向添加新卡片。</p>
+            <p>3. 最多同时开启 4 张卡片（2 行 × 2 列），相邻边不再显示"+"。</p>
+            <p>4. 点击卡片右上角的"×"可关闭该卡片（至少保留一张）。</p>
+            <p>5. 移动端可使用下方"+ 添加卡片"按钮添加新卡片。</p>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../theme/theme-system.js"></script>
+<script src="./fixed-tools/tool-utils.js"></script>
+<script src="./fixed-tools/registry.js"></script>
+<script src="./fixed-tools/morse.js"></script>
+<script src="./fixed-tools/rail-fence.js"></script>
+<script src="./fixed-tools/bacon.js"></script>
+<script src="./fixed-tools/rot13.js"></script>
+<script src="./fixed-tools/a1z26.js"></script>
+<script src="./fixed-tools/binary.js"></script>
+<script src="./fixed-tools/hex.js"></script>
+<script src="./fixed-tools/main.js"></script>
+</body>
+</html>

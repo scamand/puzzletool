@@ -3,22 +3,18 @@
     box-sizing: border-box;
 }
 
-html {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    overflow: hidden; /* html 层不出现滚动条，防止页面动画期间横向抖动 */
-}
-
+html,
 body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow-y: auto;  /* body 承担滚动，固定密码多行时可正常滚动 */
+}
+
+body {
     font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     line-height: 1.6;
     color: var(--text-main);
     background: var(--bg-gradient);
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
 
