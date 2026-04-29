@@ -8,7 +8,7 @@
         tags: ["a1z26", "数字", "字母", "shuzi", "zimu", "szm", "zm", "zima", "a=1"],
         mount: (container, helpers) =>
             mountCodec(container, helpers, {
-                modeHint: "示例：HELLO -> 8-5-12-12-15；词之间用 / 分隔。",
+                modeHint: "示例：HELLO -> 8-5-12-12-15；词之间用 - 分隔，空格会编码为 /",
                 sourceLabel: "输入文本",
                 targetLabel: "输出结果",
                 sourcePlaceholder: "输入文本或数字序列",
