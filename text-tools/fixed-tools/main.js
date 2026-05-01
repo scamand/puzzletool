@@ -8,8 +8,12 @@
     const closeModal = document.getElementById("closeModal");
     const cardsRoot = document.getElementById("cardsRoot");
     const cardsStage = document.getElementById("cardsStage");
-    const edgeAddBtn = document.getElementById("edgeAddBtn");
     const mobileAddBtn = document.getElementById("mobileAddBtn");
+    const canvasMenu = document.getElementById("canvasMenu");
+    const clearCardsBtn = document.getElementById("clearCardsBtn");
+    const arrangeCardsBtn = document.getElementById("arrangeCardsBtn");
+    const saveLayoutBtn = document.getElementById("saveLayoutBtn");
+    const loadLayoutBtn = document.getElementById("loadLayoutBtn");
     const toast = document.getElementById("toast");
 
     if (
@@ -18,8 +22,12 @@
         !closeModal ||
         !cardsRoot ||
         !cardsStage ||
-        !edgeAddBtn ||
         !mobileAddBtn ||
+        !canvasMenu ||
+        !clearCardsBtn ||
+        !arrangeCardsBtn ||
+        !saveLayoutBtn ||
+        !loadLayoutBtn ||
         !toast
     ) {
         return;
@@ -52,58 +60,64 @@
         toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
     }
 
+    function readCssPx(name, fallback) {
+        const root = document.querySelector(".fixed-shell") || document.documentElement;
+        const value = window.getComputedStyle(root).getPropertyValue(name).trim();
+        const number = Number.parseFloat(value);
+        return Number.isFinite(number) ? number : fallback;
+    }
+
     const isDesktopPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    let hideTimer = null;
-    let pendingCardId = null;
-    let pendingEdge = null;
+    const MAX_CARDS = 99;
+    const CARD_GAP = 34;
+    const ARRANGE_MARGIN_X = 40;
+    const ARRANGE_MARGIN_TOP = 24;
+    const DEFAULT_CARD_WIDTH = readCssPx("--tool-card-default-width", 700);
+    const DEFAULT_CARD_HEIGHT = readCssPx("--tool-card-default-height", 400);
+    const CARD_MIN_WIDTH = readCssPx("--tool-card-min-width", 360);
+    const CARD_MIN_HEIGHT = readCssPx("--tool-card-min-height", 260);
+    const AUTO_FIT_PADDING = 8;
+    const LAYOUT_STORAGE_KEY = "fixed_cipher_layout_v1";
+    let menuPoint = null;
+    let suppressContextMenu = false;
 
-    function showAddButton(card, edge) {
-        clearTimeout(hideTimer);
-        const rect = card.element.getBoundingClientRect();
-        const stageRect = cardsStage.getBoundingClientRect();
-        const size = 44;
-        let x;
-        let y;
-        if (edge === "top") {
-            x = rect.left - stageRect.left + rect.width / 2 - size / 2;
-            y = rect.top - stageRect.top - size / 2;
-        } else if (edge === "bottom") {
-            x = rect.left - stageRect.left + rect.width / 2 - size / 2;
-            y = rect.bottom - stageRect.top - size / 2;
-        } else if (edge === "left") {
-            x = rect.left - stageRect.left - size / 2;
-            y = rect.top - stageRect.top + rect.height / 2 - size / 2;
-        } else {
-            x = rect.right - stageRect.left - size / 2;
-            y = rect.top - stageRect.top + rect.height / 2 - size / 2;
-        }
-
-        edgeAddBtn.style.left = `${x}px`;
-        edgeAddBtn.style.top = `${y}px`;
-        edgeAddBtn.classList.add("show");
-        pendingCardId = card.id;
-        pendingEdge = edge;
+    function setCanvasActive() {
+        document.body.classList.add("canvas-active");
     }
 
-    function hideAddButton() {
-        edgeAddBtn.classList.remove("show");
-        pendingCardId = null;
-        pendingEdge = null;
+    function getStagePoint(clientX, clientY) {
+        const rect = cardsRoot.getBoundingClientRect();
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
     }
 
-    function scheduleHide() {
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(hideAddButton, 160);
+    function hideCanvasMenu() {
+        canvasMenu.classList.remove("show");
     }
 
-    edgeAddBtn.addEventListener("mouseenter", () => clearTimeout(hideTimer));
-    edgeAddBtn.addEventListener("mouseleave", scheduleHide);
-    edgeAddBtn.addEventListener("click", () => {
-        if (pendingCardId !== null && pendingEdge !== null) {
-            workspace.addCard(pendingCardId, pendingEdge);
-            hideAddButton();
-        }
-    });
+    function showCanvasMenu(clientX, clientY) {
+        setCanvasActive();
+        menuPoint = getStagePoint(clientX, clientY);
+        canvasMenu.style.left = `${clientX}px`;
+        canvasMenu.style.top = `${clientY}px`;
+        canvasMenu.classList.add("show");
+
+        const rect = canvasMenu.getBoundingClientRect();
+        const maxLeft = window.innerWidth - rect.width - 8;
+        const maxTop = window.innerHeight - rect.height - 8;
+        canvasMenu.style.left = `${Math.max(8, Math.min(clientX, maxLeft))}px`;
+        canvasMenu.style.top = `${Math.max(8, Math.min(clientY, maxTop))}px`;
+    }
+
+    function isCanvasBlank(target) {
+        return !target.closest(".tool-card") && !target.closest(".canvas-menu") && !target.closest(".fixed-topbar");
+    }
+
+    function canStartCanvasPan(target) {
+        return !target.closest(".canvas-menu") && !target.closest(".fixed-topbar");
+    }
 
     class ToolCard {
         constructor(ws, id) {
@@ -111,35 +125,165 @@
             this.id = id;
             this.toolId = null;
             this.cleanup = null;
+            this.x = 0;
+            this.y = 0;
             this.element = this.createElement();
             this.contentEl = this.element.querySelector(".card-content");
+            this.resizeObserver = null;
+            this.contentResizeObserver = null;
+            this.contentMutationObserver = null;
+            this.autoFitFrame = 0;
             this.render();
         }
 
         createElement() {
             const wrap = document.createElement("section");
             wrap.className = "tool-card";
-            wrap.innerHTML = `<div class="card-content"></div>
-                <div class="card-edge-sensor" data-edge="top"></div>
-                <div class="card-edge-sensor" data-edge="bottom"></div>
-                <div class="card-edge-sensor" data-edge="left"></div>
-                <div class="card-edge-sensor" data-edge="right"></div>`;
-
-            if (isDesktopPointer) {
-                wrap.querySelectorAll(".card-edge-sensor").forEach((sensor) => {
-                    const edge = sensor.dataset.edge;
-                    sensor.addEventListener("mouseenter", () => {
-                        if (this.workspace.getAvailableSides(this.id).has(edge)) {
-                            showAddButton(this, edge);
-                        }
-                    });
-                    sensor.addEventListener("mouseleave", scheduleHide);
-                });
-            }
+            wrap.innerHTML = `<div class="card-content"></div>`;
             return wrap;
         }
 
+        setPosition(x, y) {
+            if (!isDesktopPointer) return;
+            this.x = Math.round(x);
+            this.y = Math.round(y);
+            this.element.style.left = `${this.x}px`;
+            this.element.style.top = `${this.y}px`;
+            this.workspace.updateCanvasBounds();
+        }
+
+        get width() {
+            return Math.max(CARD_MIN_WIDTH, this.element.offsetWidth || DEFAULT_CARD_WIDTH);
+        }
+
+        get height() {
+            return Math.max(CARD_MIN_HEIGHT, this.element.offsetHeight || DEFAULT_CARD_HEIGHT);
+        }
+
+        setSize(width, height) {
+            const nextWidth = Number.isFinite(width) ? width : DEFAULT_CARD_WIDTH;
+            const nextHeight = Number.isFinite(height) ? height : DEFAULT_CARD_HEIGHT;
+            this.element.style.width = `${Math.max(CARD_MIN_WIDTH, Math.round(nextWidth))}px`;
+            this.element.style.height = `${Math.max(CARD_MIN_HEIGHT, Math.round(nextHeight))}px`;
+            this.workspace.updateCanvasBounds();
+        }
+
+        initDrag() {
+            if (!isDesktopPointer) return;
+            const handle = this.contentEl.querySelector(".glow-head");
+            if (!handle || handle.dataset.dragReady === "true") return;
+            handle.dataset.dragReady = "true";
+
+            handle.addEventListener("pointerdown", (event) => {
+                if (event.button !== 0) return;
+                if (event.target.closest("button,input,select,textarea")) return;
+                event.preventDefault();
+                hideCanvasMenu();
+                setCanvasActive();
+                this.workspace.bringToFront(this);
+                this.element.classList.add("dragging");
+                handle.setPointerCapture(event.pointerId);
+
+                const startX = event.clientX;
+                const startY = event.clientY;
+                const originX = this.x;
+                const originY = this.y;
+
+                const move = (moveEvent) => {
+                    const nextX = originX + moveEvent.clientX - startX;
+                    const nextY = originY + moveEvent.clientY - startY;
+                    this.setPosition(nextX, nextY);
+                };
+
+                const stop = () => {
+                    handle.removeEventListener("pointermove", move);
+                    handle.removeEventListener("pointerup", stop);
+                    handle.removeEventListener("pointercancel", stop);
+                    this.element.classList.remove("dragging");
+                    this.workspace.updateAllCards();
+                };
+
+                handle.addEventListener("pointermove", move);
+                handle.addEventListener("pointerup", stop);
+                handle.addEventListener("pointercancel", stop);
+            });
+        }
+
+        observeResize() {
+            if (!isDesktopPointer || this.resizeObserver) return;
+            this.resizeObserver = new ResizeObserver(() => this.workspace.updateCanvasBounds());
+            this.resizeObserver.observe(this.element);
+        }
+
+        stopAutoFit() {
+            if (this.autoFitFrame) {
+                cancelAnimationFrame(this.autoFitFrame);
+                this.autoFitFrame = 0;
+            }
+            if (this.contentResizeObserver) {
+                this.contentResizeObserver.disconnect();
+                this.contentResizeObserver = null;
+            }
+            if (this.contentMutationObserver) {
+                this.contentMutationObserver.disconnect();
+                this.contentMutationObserver = null;
+            }
+        }
+
+        scheduleAutoFit() {
+            if (!isDesktopPointer || this.autoFitFrame) return;
+            this.autoFitFrame = requestAnimationFrame(() => {
+                this.autoFitFrame = 0;
+                this.fitToContent();
+            });
+        }
+
+        fitToContent() {
+            if (!isDesktopPointer) return;
+            const scroller = this.contentEl.querySelector(".pane-body,.select-body");
+            if (!scroller) return;
+
+            const heightOverflow = scroller.scrollHeight - scroller.clientHeight;
+            const widthOverflow = scroller.scrollWidth - scroller.clientWidth;
+            if (heightOverflow <= 1 && widthOverflow <= 1) return;
+
+            this.setSize(
+                this.width + Math.max(0, widthOverflow) + AUTO_FIT_PADDING,
+                this.height + Math.max(0, heightOverflow) + AUTO_FIT_PADDING
+            );
+
+            if (scroller.scrollHeight - scroller.clientHeight > 1 || scroller.scrollWidth - scroller.clientWidth > 1) {
+                this.scheduleAutoFit();
+            }
+        }
+
+        observeAutoFit(scroller) {
+            if (!isDesktopPointer || !scroller) return;
+            this.stopAutoFit();
+
+            this.contentResizeObserver = new ResizeObserver(() => this.scheduleAutoFit());
+            this.contentResizeObserver.observe(scroller);
+            Array.from(scroller.children).forEach((child) => this.contentResizeObserver.observe(child));
+
+            this.contentMutationObserver = new MutationObserver(() => {
+                Array.from(scroller.children).forEach((child) => this.contentResizeObserver.observe(child));
+                this.scheduleAutoFit();
+            });
+            this.contentMutationObserver.observe(scroller, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true
+            });
+
+            scroller.addEventListener("input", () => this.scheduleAutoFit());
+            scroller.addEventListener("change", () => this.scheduleAutoFit());
+            scroller.addEventListener("click", () => this.scheduleAutoFit());
+            this.scheduleAutoFit();
+        }
+
         disposeTool() {
+            this.stopAutoFit();
             if (typeof this.cleanup === "function") this.cleanup();
             this.cleanup = null;
         }
@@ -148,6 +292,8 @@
             this.disposeTool();
             if (this.toolId) this.renderToolView();
             else this.renderSelectView();
+            this.initDrag();
+            this.observeResize();
             this.updateButtons();
         }
 
@@ -195,6 +341,7 @@
             };
 
             paint();
+            this.observeAutoFit(this.contentEl.querySelector(".select-body"));
             searchInput.addEventListener("input", (event) => paint(event.target.value));
             grid.addEventListener("click", (event) => {
                 const button = event.target.closest(".tool-picker");
@@ -228,6 +375,7 @@
 
             const body = this.contentEl.querySelector('[data-role="tool-body"]');
             this.cleanup = tool.mount(body, { showToast, shake }) || null;
+            this.observeAutoFit(body);
             this.contentEl.querySelector('[data-action="back"]').addEventListener("click", () => {
                 this.toolId = null;
                 this.render();
@@ -245,103 +393,74 @@
             });
         }
 
-        updateEdgeSensors() {
-            const available = this.workspace.getAvailableSides(this.id);
-            this.element.querySelectorAll(".card-edge-sensor").forEach((sensor) => {
-                sensor.style.display = available.has(sensor.dataset.edge) ? "" : "none";
-            });
-        }
-
         destroy() {
             this.disposeTool();
+            if (this.resizeObserver) this.resizeObserver.disconnect();
             this.element.remove();
-        }
-    }
-
-    class Row {
-        constructor() {
-            this.cards = [];
-            this.el = document.createElement("div");
-            this.el.className = "cards-row";
         }
     }
 
     class Workspace {
         constructor(root) {
             this.root = root;
-            this.grid = [];
+            this.cards = [];
             this.seed = 1;
+            this.zSeed = 1;
+            this.panX = 0;
+            this.panY = 0;
         }
 
         get totalCards() {
-            return this.grid.reduce((sum, row) => sum + row.cards.length, 0);
+            return this.cards.length;
         }
 
         canAdd() {
-            return this.totalCards < 4;
+            return this.totalCards < MAX_CARDS;
         }
 
-        findCardPosition(cardId) {
-            for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex += 1) {
-                const colIndex = this.grid[rowIndex].cards.findIndex((card) => card.id === cardId);
-                if (colIndex >= 0) return { r: rowIndex, c: colIndex };
-            }
-            return null;
+        limitMessage() {
+            showToast("已经 99 张卡片了，你到底要把密码工厂开成多大呀！");
         }
 
-        getAvailableSides(cardId) {
-            if (!this.canAdd()) return new Set();
-            const pos = this.findCardPosition(cardId);
-            if (!pos) return new Set();
-            const { r, c } = pos;
-            const row = this.grid[r];
-            const sides = new Set();
-            if (c === 0 && row.cards.length < 2) sides.add("left");
-            if (c === row.cards.length - 1 && row.cards.length < 2) sides.add("right");
-            if (r === 0 && this.grid.length < 2) sides.add("top");
-            if (r === this.grid.length - 1 && this.grid.length < 2) sides.add("bottom");
-            return sides;
+        bringToFront(card) {
+            card.element.style.zIndex = String(++this.zSeed);
         }
 
-        addCard(cardId, edge) {
-            if (!this.canAdd()) {
-                showToast("最多可同时打开 4 张卡片（2行×2列）");
-                return;
+        addCardInstance(card, x, y) {
+            this.cards.push(card);
+            this.root.appendChild(card.element);
+            this.bringToFront(card);
+            if (isDesktopPointer) {
+                card.setPosition(x, y);
             }
-            const pos = this.findCardPosition(cardId);
-            if (!pos) return;
-            hideAddButton();
-            const { r, c } = pos;
-            const newCard = new ToolCard(this, this.seed++);
-
-            if (edge === "left") {
-                const row = this.grid[r];
-                const reference = row.el.children[c];
-                row.cards.splice(c, 0, newCard);
-                row.el.insertBefore(newCard.element, reference);
-            } else if (edge === "right") {
-                const row = this.grid[r];
-                const reference = row.el.children[c + 1] || null;
-                row.cards.splice(c + 1, 0, newCard);
-                row.el.insertBefore(newCard.element, reference);
-            } else if (edge === "top") {
-                const newRow = new Row();
-                newRow.cards.push(newCard);
-                newRow.el.appendChild(newCard.element);
-                this.grid.splice(r, 0, newRow);
-                this.root.insertBefore(newRow.el, this.grid[r + 1].el);
-            } else {
-                const newRow = new Row();
-                newRow.cards.push(newCard);
-                newRow.el.appendChild(newCard.element);
-                this.grid.splice(r + 1, 0, newRow);
-                const nextRow = this.grid[r + 2];
-                if (nextRow) this.root.insertBefore(newRow.el, nextRow.el);
-                else this.root.appendChild(newRow.el);
-            }
-
             this.updateAllCards();
             mobileAddBtn.disabled = !this.canAdd();
+            return card;
+        }
+
+        setPan(x, y) {
+            this.panX = Math.round(x);
+            this.panY = Math.round(y);
+            this.root.style.transform = `translate(${this.panX}px, ${this.panY}px)`;
+        }
+
+        panBy(dx, dy) {
+            this.setPan(this.panX + dx, this.panY + dy);
+        }
+
+        findOpenSpot(x, y) {
+            if (!isDesktopPointer) return { x: 0, y: 0 };
+            return { x, y };
+        }
+
+        addCardAt(x, y) {
+            if (!this.canAdd()) {
+                this.limitMessage();
+                return null;
+            }
+            const newCard = new ToolCard(this, this.seed++);
+            const pos = this.findOpenSpot(x, y);
+            return this.addCardInstance(newCard, pos.x, pos.y);
         }
 
         removeCard(cardId) {
@@ -350,67 +469,225 @@
                 return;
             }
 
-            const pos = this.findCardPosition(cardId);
-            if (!pos) return;
-            hideAddButton();
-            const { r, c } = pos;
-            const row = this.grid[r];
-            const [card] = row.cards.splice(c, 1);
+            const index = this.cards.findIndex((card) => card.id === cardId);
+            if (index < 0) return;
+            hideCanvasMenu();
+            const [card] = this.cards.splice(index, 1);
             card.destroy();
-
-            if (row.cards.length === 0) {
-                this.root.removeChild(row.el);
-                this.grid.splice(r, 1);
-            }
 
             this.updateAllCards();
             mobileAddBtn.disabled = !this.canAdd();
+        }
+
+        createCardFromState(state, fallbackX, fallbackY) {
+            const card = new ToolCard(this, this.seed++);
+            if (state && state.toolId && TOOL_MAP[state.toolId]) {
+                card.toolId = state.toolId;
+                card.render();
+            }
+            if (state && Number.isFinite(state.width) && Number.isFinite(state.height)) {
+                card.setSize(state.width, state.height);
+            }
+            return this.addCardInstance(
+                card,
+                state && Number.isFinite(state.x) ? state.x : fallbackX,
+                state && Number.isFinite(state.y) ? state.y : fallbackY
+            );
+        }
+
+        destroyAllCards() {
+            this.cards.forEach((card) => card.destroy());
+            this.cards = [];
+            mobileAddBtn.disabled = false;
+        }
+
+        clearCards() {
+            hideCanvasMenu();
+            this.destroyAllCards();
+            this.setPan(0, 0);
+            this.init();
+            showToast("画布已清空");
+        }
+
+        arrangeCards() {
+            if (!this.cards.length) return;
+
+            const topbar = document.querySelector(".fixed-topbar");
+            const topbarBottom = topbar ? topbar.getBoundingClientRect().bottom : 0;
+            const availableWidth = Math.max(CARD_MIN_WIDTH, window.innerWidth - ARRANGE_MARGIN_X * 2);
+            let cursorX = 0;
+            let cursorY = 0;
+            let rowHeight = 0;
+
+            this.cards.forEach((card) => {
+                const width = card.width;
+                const height = card.height;
+                if (cursorX > 0 && cursorX + width > availableWidth) {
+                    cursorX = 0;
+                    cursorY += rowHeight + CARD_GAP;
+                    rowHeight = 0;
+                }
+
+                card.setPosition(cursorX, cursorY);
+                cursorX += width + CARD_GAP;
+                rowHeight = Math.max(rowHeight, height);
+            });
+
+            this.setPan(ARRANGE_MARGIN_X, Math.ceil(topbarBottom + ARRANGE_MARGIN_TOP));
+            this.updateAllCards();
+            showToast("卡片已整理");
+        }
+
+        serialize() {
+            return {
+                panX: this.panX,
+                panY: this.panY,
+                cards: this.cards.map((card) => ({
+                    x: card.x,
+                    y: card.y,
+                    width: card.width,
+                    height: card.height,
+                    toolId: card.toolId
+                }))
+            };
+        }
+
+        saveLayout() {
+            try {
+                window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(this.serialize()));
+                showToast("当前页面设置已保存");
+            } catch (_) {
+                showToast("保存失败，浏览器可能限制了本地存储");
+            }
+        }
+
+        loadLayout() {
+            let data;
+            try {
+                data = JSON.parse(window.localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
+            } catch (_) {
+                data = null;
+            }
+            if (!data || !Array.isArray(data.cards) || !data.cards.length) {
+                showToast("还没有可加载的页面设置");
+                return;
+            }
+
+            this.destroyAllCards();
+            data.cards.slice(0, MAX_CARDS).forEach((cardState, index) => {
+                this.createCardFromState(cardState, index * 28, index * 28);
+            });
+            this.setPan(Number.isFinite(data.panX) ? data.panX : 0, Number.isFinite(data.panY) ? data.panY : 0);
+            this.updateAllCards();
+            showToast("已加载保存的页面设置");
+        }
+
+        updateCanvasBounds() {
+            if (!isDesktopPointer) return;
+            this.root.style.width = `${window.innerWidth}px`;
+            this.root.style.height = `${window.innerHeight}px`;
         }
 
         updateAllCards() {
-            for (const row of this.grid) {
-                for (const card of row.cards) {
-                    card.updateButtons();
-                    card.updateEdgeSensors();
-                }
+            for (const card of this.cards) {
+                card.updateButtons();
             }
+            this.updateCanvasBounds();
         }
 
         init() {
-            const card = new ToolCard(this, this.seed++);
-            const row = new Row();
-            row.cards.push(card);
-            row.el.appendChild(card.element);
-            this.grid.push(row);
-            this.root.appendChild(row.el);
-            this.updateAllCards();
-            mobileAddBtn.disabled = !this.canAdd();
+            const x = Math.round((window.innerWidth - DEFAULT_CARD_WIDTH) / 2);
+            const y = Math.round((window.innerHeight - DEFAULT_CARD_HEIGHT) / 2 - 80);
+            this.createCardFromState(null, x, y);
         }
     }
 
     const workspace = new Workspace(cardsRoot);
 
+    cardsStage.addEventListener("contextmenu", (event) => {
+        if (!isDesktopPointer) return;
+        event.preventDefault();
+        if (suppressContextMenu) {
+            suppressContextMenu = false;
+            return;
+        }
+        if (!isCanvasBlank(event.target)) return;
+        showCanvasMenu(event.clientX, event.clientY);
+    });
+
+    cardsStage.addEventListener("pointerdown", (event) => {
+        setCanvasActive();
+        if (!event.target.closest(".canvas-menu")) {
+            hideCanvasMenu();
+        }
+        if (!isDesktopPointer || event.button !== 2 || !canStartCanvasPan(event.target)) return;
+
+        event.preventDefault();
+        cardsStage.classList.add("panning");
+        cardsStage.setPointerCapture(event.pointerId);
+
+        const startedOnBlank = isCanvasBlank(event.target);
+        let lastX = event.clientX;
+        let lastY = event.clientY;
+        let moved = false;
+
+        const move = (moveEvent) => {
+            const dx = moveEvent.clientX - lastX;
+            const dy = moveEvent.clientY - lastY;
+            if (Math.abs(moveEvent.clientX - event.clientX) > 3 || Math.abs(moveEvent.clientY - event.clientY) > 3) {
+                moved = true;
+            }
+            workspace.panBy(dx, dy);
+            lastX = moveEvent.clientX;
+            lastY = moveEvent.clientY;
+        };
+
+        const stop = (upEvent) => {
+            cardsStage.removeEventListener("pointermove", move);
+            cardsStage.removeEventListener("pointerup", stop);
+            cardsStage.removeEventListener("pointercancel", stop);
+            cardsStage.classList.remove("panning");
+            if (moved) {
+                suppressContextMenu = true;
+            } else if (startedOnBlank) {
+                showCanvasMenu(upEvent.clientX, upEvent.clientY);
+                suppressContextMenu = true;
+            }
+        };
+
+        cardsStage.addEventListener("pointermove", move);
+        cardsStage.addEventListener("pointerup", stop);
+        cardsStage.addEventListener("pointercancel", stop);
+    });
+
+    window.addEventListener("resize", () => workspace.updateCanvasBounds());
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hideCanvasMenu();
+    });
+
+    canvasMenu.querySelector('[data-action="add-card"]').addEventListener("click", () => {
+        const point = menuPoint || getStagePoint(window.innerWidth / 2, window.innerHeight / 2);
+        workspace.addCardAt(point.x, point.y);
+        hideCanvasMenu();
+    });
+
+    clearCardsBtn.addEventListener("click", () => workspace.clearCards());
+    arrangeCardsBtn.addEventListener("click", () => workspace.arrangeCards());
+    saveLayoutBtn.addEventListener("click", () => workspace.saveLayout());
+    loadLayoutBtn.addEventListener("click", () => workspace.loadLayout());
+
     mobileAddBtn.addEventListener("click", () => {
         if (!workspace.canAdd()) {
-            showToast("最多可同时打开 4 张卡片（2行×2列）");
+            workspace.limitMessage();
             return;
         }
 
-        hideAddButton();
-        const newCard = new ToolCard(workspace, workspace.seed++);
-        const lastRow = workspace.grid[workspace.grid.length - 1];
-        if (lastRow.cards.length < 2) {
-            lastRow.cards.push(newCard);
-            lastRow.el.appendChild(newCard.element);
-        } else {
-            const newRow = new Row();
-            newRow.cards.push(newCard);
-            newRow.el.appendChild(newCard.element);
-            workspace.grid.push(newRow);
-            workspace.root.appendChild(newRow.el);
-        }
-        workspace.updateAllCards();
-        mobileAddBtn.disabled = !workspace.canAdd();
+        setCanvasActive();
+        const lastCard = workspace.cards[workspace.cards.length - 1] || null;
+        const x = lastCard ? lastCard.x : 0;
+        const y = lastCard ? lastCard.y + lastCard.height + CARD_GAP : 0;
+        workspace.addCardAt(x, y);
     });
 
     workspace.init();

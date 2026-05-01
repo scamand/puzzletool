@@ -24,15 +24,34 @@
     <link rel="stylesheet" href="../theme/dark-theme.css">
     <link rel="stylesheet" href="../theme/common-styles.css">
     <style>
-        .fixed-shell{width:min(1320px,calc(100% - 24px));margin:0 auto;padding:14px 0 24px}
-        .main-title{color:var(--title-main);text-shadow:0 0 20px var(--title-glow);margin-bottom:16px}
-        .cards-stage{position:relative;padding:16px;border-radius:16px}
-        .cards-root{display:flex;flex-direction:column;gap:16px;min-height:calc(100vh - 230px)}
-        .cards-row{display:flex;gap:16px}
-        .tool-card{flex:1;min-height:620px;border-radius:16px;border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--shadow-1);overflow:visible;animation:cardEnter .34s ease both;position:relative}
-        .card-content{height:100%;display:flex;flex-direction:column;animation:contentFade .24s ease;border-radius:inherit;overflow:hidden}
-        .view-header,.pane-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
-        .glow-head{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--primary) 34%,transparent);background:color-mix(in srgb,var(--primary-soft) 70%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 22%,transparent)}
+        html,body{height:100%;overflow:hidden}
+        .fixed-shell{--tool-card-default-width:700px;--tool-card-default-height:400px;--tool-card-min-width:360px;--tool-card-min-height:260px;width:100vw;height:100vh;padding:0;overflow:hidden}
+        .fixed-topbar{position:fixed;left:50%;top:10px;z-index:1200;width:min(860px,calc(100% - 24px));transform:translateX(-50%);padding:8px 16px;transition:padding .28s ease,opacity .24s ease,transform .28s ease}
+        .fixed-topbar:hover,.fixed-topbar:focus-within{width:min(860px,calc(100% - 24px));padding:8px 16px;opacity:1}
+        body.canvas-active .fixed-topbar:not(:hover):not(:focus-within){padding:4px 10px;opacity:.82;transform:translateX(-50%) translateY(-3px)}
+        .fixed-topbar .back-link{position:absolute;left:16px;top:50%;transform:translateY(-50%);opacity:1;transition:opacity .22s ease}
+        .fixed-topbar:hover .back-link,.fixed-topbar:focus-within .back-link{opacity:1;pointer-events:auto}
+        body.canvas-active .fixed-topbar:not(:hover):not(:focus-within) .back-link{opacity:0;pointer-events:none}
+        .main-title{color:var(--title-main);text-shadow:0 0 20px var(--title-glow);margin:0;text-align:center;transition:font-size .28s ease}
+        body.canvas-active .fixed-topbar:not(:hover):not(:focus-within) .main-title{font-size:1.04rem}
+        .fixed-topbar .help-icon{width:auto;height:auto;border:0;border-radius:0;background:transparent;padding:0;box-shadow:none}
+        .fixed-topbar .help-icon:hover{background:transparent;transform:scale(1.08)}
+        .topbar-actions{position:absolute;right:16px;top:50%;display:flex;gap:8px;transform:translateY(-50%);opacity:1;transition:opacity .22s ease}
+        body.canvas-active .fixed-topbar:not(:hover):not(:focus-within) .topbar-actions{opacity:0;pointer-events:none}
+        .topbar-btn{min-height:34px;padding:0 10px;border-radius:9px;border:1px solid color-mix(in srgb,var(--primary) 34%,transparent);background:transparent;color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease,border-color .2s ease}
+        .topbar-btn:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--primary-soft) 76%,transparent);border-color:color-mix(in srgb,var(--primary) 52%,transparent)}
+        .topbar-btn.warn{border-color:color-mix(in srgb,var(--danger) 46%,transparent);color:color-mix(in srgb,var(--danger) 76%,white 24%)}
+        .cards-stage{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none}
+        .cards-stage.panning{cursor:grabbing}
+        .cards-root{position:absolute;inset:0;transform-origin:0 0}
+        .cards-row{display:flex;gap:28px}
+        .tool-card{position:absolute;width:var(--tool-card-default-width);height:var(--tool-card-default-height);min-width:var(--tool-card-min-width);min-height:var(--tool-card-min-height);max-width:none;border-radius:16px;border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--shadow-1);overflow:hidden;resize:both;animation:cardEnter .34s ease both;user-select:auto}
+        .card-content{height:100%;display:flex;flex-direction:column;animation:contentFade .24s ease;border-radius:inherit;overflow:hidden;position:relative}
+        .view-header,.pane-header{position:absolute;left:12px;right:12px;top:10px;z-index:3;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none}
+        .view-header .glow-head,.pane-header .glow-head,.view-header .close-btn,.pane-header .close-btn{pointer-events:auto}
+        .glow-head{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--primary) 34%,transparent);background:color-mix(in srgb,var(--primary-soft) 70%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 22%,transparent);cursor:grab;user-select:none;touch-action:none}
+        .tool-card.dragging{z-index:50;box-shadow:var(--shadow-2)}
+        .tool-card.dragging .glow-head{cursor:grabbing}
         .glow-head-title{font-size:.95rem;color:color-mix(in srgb,var(--primary) 72%,white 28%);font-weight:600}
         .mini-btn{min-height:34px;padding:0 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--primary) 36%,transparent);background:color-mix(in srgb,var(--surface-1) 86%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
         .mini-btn:hover{transform:translateY(-2px);background:color-mix(in srgb,var(--primary-soft) 70%,transparent)}
@@ -40,7 +59,7 @@
         .close-btn{min-width:44px;min-height:44px;border-radius:10px;border:1px solid color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%);cursor:pointer;transition:transform .2s ease,filter .2s ease}
         .close-btn:hover{transform:translateY(-2px);filter:brightness(1.04)}
         .close-btn.hidden{display:none}
-        .select-body,.pane-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;overflow-y:auto}
+        .select-body,.pane-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:70px 16px 16px;overflow-y:auto}
         .search-wrap{position:relative}
         .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-sub);pointer-events:none}
         .search-input{padding-left:36px}
@@ -61,18 +80,10 @@
         .action-btn.warn{border-color:color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%)}
         .tool-empty{text-align:center;color:var(--text-sub);padding:28px 10px}
 
-        /* 每张卡片四周的悬停感应区 */
-        .card-edge-sensor{position:absolute;z-index:20;opacity:0;pointer-events:auto}
-        .card-edge-sensor[data-edge="left"]{top:15%;bottom:15%;left:-14px;width:28px;cursor:w-resize}
-        .card-edge-sensor[data-edge="right"]{top:15%;bottom:15%;right:-14px;width:28px;cursor:e-resize}
-        .card-edge-sensor[data-edge="top"]{left:15%;right:15%;top:-14px;height:28px;cursor:n-resize}
-        .card-edge-sensor[data-edge="bottom"]{left:15%;right:15%;bottom:-14px;height:28px;cursor:s-resize}
-
-        /* 全局浮动加号按钮 */
-        .edge-add-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid color-mix(in srgb,var(--primary) 60%,transparent);background:color-mix(in srgb,var(--primary-soft) 90%,transparent);color:color-mix(in srgb,var(--primary) 80%,white 20%);font-size:1.6rem;line-height:1;cursor:pointer;z-index:40;opacity:0;pointer-events:none;transform:scale(.82);transition:opacity .18s ease,transform .2s ease,background-color .18s ease;box-shadow:0 6px 20px color-mix(in srgb,var(--primary-glow) 28%,transparent);display:flex;align-items:center;justify-content:center}
-        .edge-add-btn.show{opacity:1;pointer-events:auto;transform:scale(1)}
-        .edge-add-btn:hover{background:color-mix(in srgb,var(--primary-soft) 100%,transparent);transform:scale(1.08)}
-        .edge-add-btn:active{transform:scale(.94);filter:brightness(.92)}
+        .canvas-menu{position:fixed;z-index:2200;display:none;min-width:156px;padding:6px;border:1px solid var(--line-strong);border-radius:12px;background:color-mix(in srgb,var(--surface-1) 94%,transparent);box-shadow:var(--shadow-2);backdrop-filter:blur(14px)}
+        .canvas-menu.show{display:block;animation:contentFade .12s ease both}
+        .canvas-menu button{width:100%;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--text-main);text-align:left;padding:0 12px;cursor:pointer;transition:background-color .2s ease,transform .2s ease}
+        .canvas-menu button:hover{background:color-mix(in srgb,var(--primary-soft) 88%,transparent);transform:translateY(-1px)}
 
         .mobile-add-wrap{display:none;margin-top:10px;justify-content:center}
         .mobile-add-btn{min-height:46px;min-width:160px;border-radius:999px;border:1px solid color-mix(in srgb,var(--primary) 50%,transparent);background:color-mix(in srgb,var(--primary-soft) 82%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
@@ -88,20 +99,29 @@
         @keyframes contentFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
         @media (max-width:840px){
-            .fixed-shell{width:calc(100% - 14px)}
-            .cards-row{flex-direction:column}
-            .tool-card{min-height:540px}
-            .card-edge-sensor,.edge-add-btn{display:none}
-            .mobile-add-wrap{display:flex}
+            .fixed-topbar{width:calc(100% - 16px);padding-top:36px}
+            body.canvas-active .fixed-topbar:not(:hover):not(:focus-within){width:calc(100% - 16px);padding-top:4px}
+            .topbar-actions{left:8px;right:8px;top:0;justify-content:center;transform:none}
+            .topbar-btn{padding:0 8px;font-size:.82rem}
+            .tool-card{width:min(var(--tool-card-default-width),calc(100vw - 24px));min-width:280px}
+            .canvas-menu{display:none!important}
+            .mobile-add-wrap{position:fixed;left:0;right:0;bottom:14px;z-index:1300;display:flex}
         }
     </style>
 </head>
 <body>
 <div class="fixed-shell page-enter">
-    <a href="../index.html" class="back-link">← 返回工具箱</a>
-    <h1 class="main-title"><span class="title-wrap">固定密码<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span></h1>
+    <div class="fixed-topbar">
+        <a href="../index.html" class="back-link">← 返回工具箱</a>
+        <h1 class="main-title"><span class="title-wrap">固定密码<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span></h1>
+        <div class="topbar-actions" aria-label="画布操作">
+            <button class="topbar-btn warn" id="clearCardsBtn" type="button">清空</button>
+            <button class="topbar-btn" id="arrangeCardsBtn" type="button">整理</button>
+            <button class="topbar-btn" id="saveLayoutBtn" type="button">保存</button>
+            <button class="topbar-btn" id="loadLayoutBtn" type="button">加载</button>
+        </div>
+    </div>
     <div class="cards-stage" id="cardsStage">
-        <button class="edge-add-btn" id="edgeAddBtn" type="button" title="添加卡片">+</button>
         <div class="cards-root" id="cardsRoot"></div>
     </div>
     <div class="mobile-add-wrap">
@@ -114,12 +134,17 @@
         <h2 class="modal-title">使用说明</h2>
         <div class="modal-body">
             <p>1. 在卡片中搜索并选择需要的固定密码工具。</p>
-            <p>2. 鼠标移到卡片的上、下、左、右边缘，出现"+"时点击可在对应方向添加新卡片。</p>
-            <p>3. 最多同时开启 4 张卡片（2 行 × 2 列），相邻边不再显示"+"。</p>
-            <p>4. 点击卡片右上角的"×"可关闭该卡片（至少保留一张）。</p>
-            <p>5. 移动端可使用下方"+ 添加卡片"按钮添加新卡片。</p>
+            <p>2. 按住右键拖拽画布空白处可以移动画布，右键单击空白处可从菜单添加新卡片。</p>
+            <p>3. 拖动卡片左上角标题标签可以移动卡片，拖动右下角可以调整大小。</p>
+            <p>4. 操作画布后顶部标题会收起，悬停标题区域会展开。</p>
+            <p>5. 顶部按钮可清空画布、整理卡片、保存或加载当前页面设置。</p>
+            <p>6. 点击卡片右上角的"×"可关闭当前卡片（至少保留一张）。</p>
+            <p>7. 最多同时开启 99 张卡片，移动端可使用下方"+ 添加卡片"按钮。</p>
         </div>
     </div>
+</div>
+<div class="canvas-menu" id="canvasMenu">
+    <button type="button" data-action="add-card">添加卡片</button>
 </div>
 <div class="toast" id="toast"></div>
 <script src="../theme/theme-system.js"></script>
