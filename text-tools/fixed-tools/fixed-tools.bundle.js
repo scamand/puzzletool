@@ -647,358 +647,417 @@
 
 /* ===== source: bacon.js ===== */
 (function () {
-    const { BACON, mountCodec } = window.FixedToolUtils;
+    const { BACON } = window.FixedToolUtils;
+
+    function encodeBacon(value) {
+        return value
+            .toUpperCase()
+            .split("")
+            .map((char) => {
+                if (/[A-Z]/.test(char)) return BACON.map[char];
+                return char === " " ? "/" : char;
+            })
+            .join(" ");
+    }
+
+    function decodeBacon(value) {
+        return value
+            .trim()
+            .split(/\s+/)
+            .map((token) => {
+                if (token === "/") return " ";
+                if (/^[AB]{5}$/i.test(token)) return BACON.reverse[token.toUpperCase()] || "?";
+                return token;
+            })
+            .join("");
+    }
+
+    function mountBacon(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="培根密码把字母转成 A/B 组成的五位编码。解码时每组用空格分隔，用 / 表示空格。">❓</button>`;
+        }
+
+        container.innerHTML = `<div class="stack">
+            <textarea class="text-input" data-role="source" placeholder="输入字母文本或 A/B 编码"></textarea>
+            <div class="controls-row">
+                <button class="action-btn" data-action="encode">文本 -> 培根</button>
+                <button class="action-btn" data-action="decode">培根 -> 文本</button>
+                <button class="action-btn warn" data-action="clear">清空</button>
+            </div>
+            <textarea class="text-output" data-role="output" readonly placeholder="转换结果会显示在这里，例如：HELLO -> AABBB AABAA ABABB ABABB ABBBA"></textarea>
+        </div>`;
+
+        const input = container.querySelector('[data-role="source"]');
+        const output = container.querySelector('[data-role="output"]');
+
+        const run = (fn) => {
+            if (!input.value.trim()) {
+                helpers.showToast("请先输入内容");
+                helpers.shake(input);
+                return;
+            }
+            output.value = fn(input.value);
+        };
+
+        container.querySelector('[data-action="encode"]').addEventListener("click", () => run(encodeBacon));
+        container.querySelector('[data-action="decode"]').addEventListener("click", () => run(decodeBacon));
+        container.querySelector('[data-action="clear"]').addEventListener("click", () => {
+            input.value = "";
+            output.value = "";
+            input.focus();
+        });
+
+        return () => {
+            if (headerActions) headerActions.innerHTML = "";
+        };
+    }
+
     window.FixedToolRegistry.register({
         id: "bacon",
         name: "培根密码",
         icon: "BA",
         desc: "A/B 五位组编码。",
         tags: ["bacon", "AB", "五位", "peigen", "peigenmi", "peigenma", "pgm"],
-        mount: (container, helpers) =>
-            mountCodec(container, helpers, {
-                modeHint: "示例：HELLO -> AABBB AABAA ABABB ABABB ABBBA",
-                sourceLabel: "输入文本",
-                targetLabel: "输出结果",
-                sourcePlaceholder: "输入字母文本或A/B编码",
-                encodeLabel: "文本 -> 培根",
-                decodeLabel: "培根 -> 文本",
-                encode: (value) =>
-                    value
-                        .toUpperCase()
-                        .split("")
-                        .map((char) => {
-                            if (/[A-Z]/.test(char)) return BACON.map[char];
-                            return char === " " ? "/" : char;
-                        })
-                        .join(" "),
-                decode: (value) =>
-                    value
-                        .trim()
-                        .split(/\s+/)
-                        .map((token) => {
-                            if (token === "/") return " ";
-                            if (/^[AB]{5}$/i.test(token)) return BACON.reverse[token.toUpperCase()] || "?";
-                            return token;
-                        })
-                        .join("")
-            })
+        mount: mountBacon
     });
 })();
 
 
 /* ===== source: rot13.js ===== */
 (function () {
-    const { mountCodec, rot13 } = window.FixedToolUtils;
+    const { rot13 } = window.FixedToolUtils;
+
+    function mountRot13(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="ROT13 会把英文字母固定轮转 13 位；它是可逆的，同一段文本执行两次会回到原文。">❓</button>`;
+        }
+
+        container.innerHTML = `<div class="stack">
+            <textarea class="text-input" data-role="source" placeholder="输入任意文本"></textarea>
+            <div class="controls-row">
+                <button class="action-btn" data-action="convert">执行 ROT13</button>
+                <button class="action-btn warn" data-action="clear">清空</button>
+            </div>
+            <textarea class="text-output" data-role="output" readonly placeholder="转换结果会显示在这里，例如：HELLO -> URYYB"></textarea>
+        </div>`;
+
+        const input = container.querySelector('[data-role="source"]');
+        const output = container.querySelector('[data-role="output"]');
+
+        container.querySelector('[data-action="convert"]').addEventListener("click", () => {
+            if (!input.value.trim()) {
+                helpers.showToast("请先输入内容");
+                helpers.shake(input);
+                return;
+            }
+            output.value = rot13(input.value);
+        });
+
+        container.querySelector('[data-action="clear"]').addEventListener("click", () => {
+            input.value = "";
+            output.value = "";
+            input.focus();
+        });
+
+        return () => {
+            if (headerActions) headerActions.innerHTML = "";
+        };
+    }
+
     window.FixedToolRegistry.register({
         id: "rot13",
         name: "ROT13",
         icon: "🔄",
         desc: "固定轮转 13 位。",
         tags: ["rot13", "轮转", "lunzhuan", "lz", "lzm", "xuanhuan"],
-        mount: (container, helpers) =>
-            mountCodec(container, helpers, {
-                modeHint: "ROT13 可逆，转换两次会回到原文。",
-                sourceLabel: "输入文本",
-                targetLabel: "输出结果",
-                sourcePlaceholder: "输入任意文本",
-                encodeLabel: "执行 ROT13",
-                decodeLabel: "执行 ROT13",
-                encode: rot13,
-                decode: rot13
-            })
+        mount: mountRot13
     });
 })();
 
 
 /* ===== source: a1z26.js ===== */
 (function () {
-    const { mountCodec } = window.FixedToolUtils;
+    function encodeA1Z26(value) {
+        return value
+            .trim()
+            .split(/\s+/)
+            .map((word) =>
+                word
+                    .split("")
+                    .map((char) => {
+                        const code = char.toUpperCase().charCodeAt(0);
+                        if (code >= 65 && code <= 90) return String(code - 64);
+                        return char;
+                    })
+                    .join(" ")
+            )
+            .join(" / ");
+    }
+
+    function decodeA1Z26(value) {
+        return value
+            .trim()
+            .split(/\s*\/\s*/)
+            .map((word) =>
+                word
+                    .split(/[\s-]+/)
+                    .filter(Boolean)
+                    .map((token) => {
+                        const number = Number(token);
+                        if (Number.isInteger(number) && number >= 1 && number <= 26) {
+                            return String.fromCharCode(64 + number);
+                        }
+                        return token;
+                    })
+                    .join("")
+            )
+            .join(" ");
+    }
+
+    function mountA1Z26(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="A1Z26 使用 A=1 到 Z=26 的固定对应关系。数字间用空格或 - 分隔，词之间可用 / 分隔。">❓</button>`;
+        }
+
+        container.innerHTML = `<div class="stack">
+            <textarea class="text-input" data-role="source" placeholder="输入文本或数字序列，数字请用空格隔开"></textarea>
+            <div class="controls-row">
+                <button class="action-btn" data-action="encode">文本 -> A1Z26</button>
+                <button class="action-btn" data-action="decode">A1Z26 -> 文本</button>
+                <button class="action-btn warn" data-action="clear">清空</button>
+            </div>
+            <textarea class="text-output" data-role="output" readonly placeholder="转换结果会显示在这里，例如：HELLO -> 8 5 12 12 15"></textarea>
+        </div>`;
+
+        const input = container.querySelector('[data-role="source"]');
+        const output = container.querySelector('[data-role="output"]');
+
+        const run = (fn) => {
+            if (!input.value.trim()) {
+                helpers.showToast("请先输入内容");
+                helpers.shake(input);
+                return;
+            }
+            output.value = fn(input.value);
+        };
+
+        container.querySelector('[data-action="encode"]').addEventListener("click", () => run(encodeA1Z26));
+        container.querySelector('[data-action="decode"]').addEventListener("click", () => run(decodeA1Z26));
+        container.querySelector('[data-action="clear"]').addEventListener("click", () => {
+            input.value = "";
+            output.value = "";
+            input.focus();
+        });
+
+        return () => {
+            if (headerActions) headerActions.innerHTML = "";
+        };
+    }
+
     window.FixedToolRegistry.register({
         id: "a1z26",
         name: "A1Z26",
         icon: "🔢",
         desc: "字母与 1~26 对应。",
         tags: ["a1z26", "数字", "字母", "shuzi", "zimu", "szm", "zm", "zima", "a=1"],
-        mount: (container, helpers) =>
-            mountCodec(container, helpers, {
-                modeHint: "示例：HELLO -> 8-5-12-12-15；词之间用 - 分隔，空格会编码为 /",
-                sourceLabel: "输入文本",
-                targetLabel: "输出结果",
-                sourcePlaceholder: "输入文本或数字序列",
-                encodeLabel: "文本 -> A1Z26",
-                decodeLabel: "A1Z26 -> 文本",
-                encode: (value) =>
-                    value
-                        .trim()
-                        .split(/\s+/)
-                        .map((word) =>
-                            word
-                                .split("")
-                                .map((char) => {
-                                    const code = char.toUpperCase().charCodeAt(0);
-                                    if (code >= 65 && code <= 90) return String(code - 64);
-                                    return char;
-                                })
-                                .join("-")
-                        )
-                        .join(" / "),
-                decode: (value) =>
-                    value
-                        .trim()
-                        .split(/\s*\/\s*/)
-                        .map((word) =>
-                            word
-                                .split("-")
-                                .map((token) => {
-                                    const number = Number(token);
-                                    if (Number.isInteger(number) && number >= 1 && number <= 26) {
-                                        return String.fromCharCode(64 + number);
-                                    }
-                                    return token;
-                                })
-                                .join("")
-                        )
-                        .join(" ")
-            })
+        mount: mountA1Z26
     });
 })();
 
 
 /* ===== source: binary.js ===== */
 (function () {
-    const BASE_OPTIONS = {
-        2: {
-            label: "二进制 ASCII",
-            bytes: 8,
-            tokenPattern: /^[01]{8}$/,
-            allowedKeys: "01"
-        },
-        16: {
-            label: "十六进制 ASCII",
-            bytes: 2,
-            tokenPattern: /^[0-9A-Fa-f]{2}$/,
-            allowedKeys: "0123456789ABCDEF"
-        }
-    };
-
-    const KEY_ORDER = [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F"
+    const BASES = [
+        { id: "hex", label: "HEX", base: 16, keys: "0123456789ABCDEF" },
+        { id: "dec", label: "DEC", base: 10, keys: "0123456789" },
+        { id: "oct", label: "OCT", base: 8, keys: "01234567" },
+        { id: "bin", label: "BIN", base: 2, keys: "01" }
     ];
+    const KEY_ORDER = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
 
-    function getBase(container) {
-        return Number.parseInt(container.querySelector('[data-role="base-select"]').value, 10);
+    function parseToken(token, base) {
+        let value = 0n;
+        for (const char of token.toUpperCase()) {
+            const digit = Number.parseInt(char, 16);
+            if (!Number.isInteger(digit) || digit >= base) return null;
+            value = value * BigInt(base) + BigInt(digit);
+        }
+        return value;
     }
 
-    function encodeTextToBase(text, base) {
-        const cfg = BASE_OPTIONS[base];
-        return Array.from(text)
-            .map((char) => char.charCodeAt(0).toString(base).toUpperCase().padStart(cfg.bytes, "0"))
-            .join(" ");
-    }
-
-    function decodeBaseToText(value, base) {
-        const cfg = BASE_OPTIONS[base];
+    function parseGroups(value, base) {
         return value
             .trim()
             .split(/\s+/)
-            .map((token) => {
-                if (cfg.tokenPattern.test(token)) {
-                    return String.fromCharCode(parseInt(token, base));
-                }
-                return token;
-            })
-            .join("");
+            .filter(Boolean)
+            .map((token) => parseToken(token, base))
+            .filter((item) => item !== null);
     }
 
-    function updateModeUI(container, mode) {
-        const inputPanel = container.querySelector('[data-role="panel-input"]');
-        const keypadPanel = container.querySelector('[data-role="panel-keypad"]');
-        const modeInputBtn = container.querySelector('[data-role="mode-input"]');
-        const modeKeypadBtn = container.querySelector('[data-role="mode-keypad"]');
-
-        const isInput = mode === "input";
-        inputPanel.style.display = isInput ? "" : "none";
-        keypadPanel.style.display = isInput ? "none" : "";
-        modeInputBtn.classList.toggle("active", isInput);
-        modeKeypadBtn.classList.toggle("active", !isInput);
+    function formatGroups(groups, base) {
+        if (!groups.length) return "0";
+        return groups.map((value) => value.toString(base).toUpperCase()).join(" ");
     }
 
-    function updateBaseDependentUI(container) {
-        const base = getBase(container);
-        const cfg = BASE_OPTIONS[base];
-        const source = container.querySelector('[data-role="source"]');
-        const encodeBtn = container.querySelector('[data-role="encode"]');
-        const decodeBtn = container.querySelector('[data-role="decode"]');
-        const keypadHint = container.querySelector('[data-role="keypad-hint"]');
+    function mountProgrammerRadix(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="选择 HEX、DEC、OCT 或 BIN 后输入数字。空格分隔多个数字；Backspace 删除一位，Delete 清空。无效按键会变暗且无法输入。">❓</button>`;
+        }
 
-        source.placeholder = base === 2 ? "输入文本或二进制字节（8位分组）" : "输入文本或十六进制字节（2位分组）";
-        encodeBtn.textContent = `文本 -> ${cfg.label}`;
-        decodeBtn.textContent = `${cfg.label} -> 文本`;
-        keypadHint.textContent = `按键模式：当前为${cfg.label}，每组${cfg.bytes}位，使用空格分隔。`;
+        let activeBase = 10;
+        let inputValue = "";
+        let cleanupKeyboard = null;
 
-        container.querySelectorAll(".radix-key").forEach((btn) => {
-            const key = btn.dataset.key;
-            btn.disabled = !cfg.allowedKeys.includes(key);
-        });
-    }
+        container.innerHTML = `<div class="programmer-tool">
+            <div class="radix-display" data-role="display">
+                ${BASES.map((item) => `<div class="radix-row" role="button" tabindex="0" data-base="${item.base}">
+                    <span class="radix-label">${item.label}</span>
+                    <span class="radix-value" data-role="value-${item.base}">0</span>
+                </div>`).join("")}
+            </div>
+            <div class="radix-keypad">
+                ${KEY_ORDER.map((key) => `<button class="radix-key" type="button" data-key="${key}">${key}</button>`).join("")}
+            </div>
+        </div>`;
 
-    function mountRadixConverter(container, helpers) {
-        container.innerHTML = `<div class="panel-note">在同一卡片内支持二进制和十六进制转换，可通过下拉切换进制；支持“输入模式”和“按键模式”。</div>
-            <div class="stack">
-                <div class="controls-row">
-                    <label class="input-label" style="margin:0;align-self:center;">当前进制</label>
-                    <select class="text-input" data-role="base-select" style="min-height:44px;max-width:220px;">
-                        <option value="2">二进制 ASCII</option>
-                        <option value="16">十六进制 ASCII</option>
-                    </select>
-                </div>
-                <div class="controls-row">
-                    <button class="action-btn active" data-role="mode-input">输入模式</button>
-                    <button class="action-btn" data-role="mode-keypad">按键模式</button>
-                </div>
+        const rows = Array.from(container.querySelectorAll(".radix-row"));
+        const keys = Array.from(container.querySelectorAll(".radix-key"));
 
-                <div data-role="panel-input">
-                    <div>
-                        <label class="input-label">输入内容</label>
-                        <textarea class="text-input" data-role="source" placeholder="输入文本或二进制字节（8位分组）"></textarea>
-                    </div>
-                    <div class="controls-row">
-                        <button class="action-btn" data-role="encode">文本 -> 二进制 ASCII</button>
-                        <button class="action-btn" data-role="decode">二进制 ASCII -> 文本</button>
-                        <button class="action-btn warn" data-role="clear-input">清空</button>
-                    </div>
-                    <div>
-                        <label class="input-label">输出结果</label>
-                        <textarea class="text-output" data-role="output" readonly placeholder="转换结果会显示在这里"></textarea>
-                    </div>
-                </div>
+        const currentBaseInfo = () => BASES.find((item) => item.base === activeBase) || BASES[1];
 
-                <div data-role="panel-keypad" style="display:none;">
-                    <div class="panel-note" data-role="keypad-hint">按键模式：当前为二进制 ASCII，每组8位，使用空格分隔。</div>
-                    <div>
-                        <label class="input-label">屏幕输入</label>
-                        <textarea class="text-input" data-role="keypad-screen" placeholder="可直接输入或使用下方虚拟按键" style="min-height:96px;"></textarea>
-                    </div>
-                    <div class="tool-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
-                        ${KEY_ORDER.map((key) => `<button class="tool-picker radix-key" type="button" data-key="${key}">${key}</button>`).join("")}
-                        <button class="tool-picker" type="button" data-action="space">空格</button>
-                        <button class="tool-picker" type="button" data-action="backspace">退格</button>
-                        <button class="tool-picker" type="button" data-action="clear-keypad">清空</button>
-                        <button class="tool-picker" type="button" data-action="decode-keypad">得到输出</button>
-                    </div>
-                    <div>
-                        <label class="input-label">按键模式输出</label>
-                        <textarea class="text-output" data-role="keypad-output" readonly placeholder="按键解码结果会显示在这里"></textarea>
-                    </div>
-                </div>
-            </div>`;
-
-        const baseSelect = container.querySelector('[data-role="base-select"]');
-        const source = container.querySelector('[data-role="source"]');
-        const output = container.querySelector('[data-role="output"]');
-        const keypadScreen = container.querySelector('[data-role="keypad-screen"]');
-        const keypadOutput = container.querySelector('[data-role="keypad-output"]');
-        const modeInputBtn = container.querySelector('[data-role="mode-input"]');
-        const modeKeypadBtn = container.querySelector('[data-role="mode-keypad"]');
-        const encodeBtn = container.querySelector('[data-role="encode"]');
-        const decodeBtn = container.querySelector('[data-role="decode"]');
-        const clearInputBtn = container.querySelector('[data-role="clear-input"]');
-
-        const runInputMode = (action) => {
-            const base = getBase(container);
-            if (!source.value.trim()) {
-                helpers.showToast("请先输入内容");
-                helpers.shake(source);
-                return;
-            }
-            output.value = action === "encode" ? encodeTextToBase(source.value, base) : decodeBaseToText(source.value, base);
+        const flashKey = (key) => {
+            const button = keys.find((item) => item.dataset.key === key);
+            if (!button || button.disabled) return;
+            button.classList.remove("flash");
+            void button.offsetWidth;
+            button.classList.add("flash");
         };
 
-        const runKeypadDecode = () => {
-            const base = getBase(container);
-            if (!keypadScreen.value.trim()) {
-                helpers.showToast("请先输入按键内容");
-                helpers.shake(keypadScreen);
-                return;
-            }
-            keypadOutput.value = decodeBaseToText(keypadScreen.value, base);
-        };
+        const render = () => {
+            const groups = parseGroups(inputValue, activeBase);
 
-        baseSelect.addEventListener("change", () => updateBaseDependentUI(container));
-        modeInputBtn.addEventListener("click", () => updateModeUI(container, "input"));
-        modeKeypadBtn.addEventListener("click", () => updateModeUI(container, "keypad"));
-        encodeBtn.addEventListener("click", () => runInputMode("encode"));
-        decodeBtn.addEventListener("click", () => runInputMode("decode"));
-
-        clearInputBtn.addEventListener("click", () => {
-            source.value = "";
-            output.value = "";
-            source.focus();
-        });
-
-        container.querySelectorAll(".radix-key").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                keypadScreen.value += btn.dataset.key;
-                keypadScreen.focus();
+            rows.forEach((row) => {
+                const base = Number.parseInt(row.dataset.base, 10);
+                const valueEl = row.querySelector(".radix-value");
+                row.classList.toggle("active", base === activeBase);
+                valueEl.textContent = base === activeBase ? inputValue || "0" : formatGroups(groups, base);
             });
+
+            const allowedKeys = currentBaseInfo().keys;
+            keys.forEach((button) => {
+                const enabled = allowedKeys.includes(button.dataset.key);
+                button.disabled = !enabled;
+                button.classList.toggle("disabled", !enabled);
+            });
+        };
+
+        const chooseBase = (base) => {
+            if (base === activeBase) return;
+            const groups = parseGroups(inputValue, activeBase);
+            activeBase = base;
+            inputValue = groups.length ? formatGroups(groups, activeBase) : "";
+            render();
+        };
+
+        const pressKey = (key) => {
+            key = key.toUpperCase();
+            if (!currentBaseInfo().keys.includes(key)) return;
+            inputValue += key;
+            flashKey(key);
+            render();
+        };
+
+        const appendSpace = () => {
+            if (!inputValue || inputValue.endsWith(" ")) return;
+            inputValue += " ";
+            render();
+        };
+
+        const backspace = () => {
+            if (!inputValue) return;
+            inputValue = inputValue.slice(0, -1);
+            render();
+        };
+
+        const clear = () => {
+            inputValue = "";
+            render();
+        };
+
+        rows.forEach((row) => {
+            row.addEventListener("click", () => chooseBase(Number.parseInt(row.dataset.base, 10)));
+            row.addEventListener("keydown", (event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                chooseBase(Number.parseInt(row.dataset.base, 10));
+            });
+            row.querySelector(".radix-value").addEventListener("pointerdown", (event) => event.stopPropagation());
+            row.querySelector(".radix-value").addEventListener("click", (event) => event.stopPropagation());
         });
 
-        container.querySelector('[data-action="space"]').addEventListener("click", () => {
-            keypadScreen.value += " ";
-            keypadScreen.focus();
+        keys.forEach((button) => {
+            button.addEventListener("click", () => pressKey(button.dataset.key));
         });
 
-        container.querySelector('[data-action="backspace"]').addEventListener("click", () => {
-            keypadScreen.value = keypadScreen.value.slice(0, -1);
-            keypadScreen.focus();
-        });
+        const onKeyDown = (event) => {
+            const card = container.closest(".tool-card");
+            const isActiveCard = card && (card.matches(":hover") || card.contains(document.activeElement));
+            if (!isActiveCard) return;
 
-        container.querySelector('[data-action="clear-keypad"]').addEventListener("click", () => {
-            keypadScreen.value = "";
-            keypadOutput.value = "";
-            keypadScreen.focus();
-        });
+            const key = event.key.toUpperCase();
+            if (KEY_ORDER.includes(key)) {
+                if (!currentBaseInfo().keys.includes(key)) return;
+                event.preventDefault();
+                pressKey(key);
+            } else if (event.key === " ") {
+                event.preventDefault();
+                appendSpace();
+            } else if (event.key === "Backspace") {
+                event.preventDefault();
+                backspace();
+            } else if (event.key === "Delete") {
+                event.preventDefault();
+                clear();
+            }
+        };
 
-        container.querySelector('[data-action="decode-keypad"]').addEventListener("click", runKeypadDecode);
+        document.addEventListener("keydown", onKeyDown);
+        cleanupKeyboard = () => document.removeEventListener("keydown", onKeyDown);
+        render();
 
-        updateModeUI(container, "input");
-        updateBaseDependentUI(container);
-        return () => {};
+        return () => {
+            if (cleanupKeyboard) cleanupKeyboard();
+            if (headerActions) headerActions.innerHTML = "";
+        };
     }
 
     window.FixedToolRegistry.register({
         id: "radix-converter",
         name: "进制转换",
         icon: "🧮",
-        desc: "二进制/十六进制统一转换，支持输入与按键模式。",
+        desc: "程序员模式进制换算。",
         tags: [
             "binary",
             "hex",
-            "ascii",
+            "oct",
+            "dec",
             "2进制",
+            "8进制",
+            "10进制",
             "16进制",
             "erjinzhi",
+            "bajinzhi",
+            "shijinzhi",
             "shiliujinzhi",
             "radix",
             "jinzhi",
             "jzzh"
         ],
-        mount: mountRadixConverter
+        mount: mountProgrammerRadix
     });
 })();
 
@@ -1058,6 +1117,8 @@
     });
 
     let toastTimer = null;
+    let activeTooltipButton = null;
+    let headTooltip = null;
 
     function showToast(message) {
         toast.textContent = message;
@@ -1103,6 +1164,36 @@
         canvasMenu.classList.remove("show");
     }
 
+    function getHeadTooltip() {
+        if (headTooltip) return headTooltip;
+        headTooltip = document.createElement("div");
+        headTooltip.className = "head-tooltip";
+        document.body.appendChild(headTooltip);
+        return headTooltip;
+    }
+
+    function hideHeadTooltip() {
+        activeTooltipButton = null;
+        if (headTooltip) headTooltip.classList.remove("show");
+    }
+
+    function showHeadTooltip(button) {
+        const tip = button && button.dataset.tip;
+        if (!tip) return;
+
+        activeTooltipButton = button;
+        const tooltip = getHeadTooltip();
+        tooltip.textContent = tip;
+        tooltip.classList.add("show");
+
+        const buttonRect = button.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const left = Math.max(12, Math.min(buttonRect.left + buttonRect.width / 2 - tooltipRect.width / 2, window.innerWidth - tooltipRect.width - 12));
+        const top = Math.max(12, Math.min(buttonRect.bottom + 10, window.innerHeight - tooltipRect.height - 12));
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    }
+
     function showCanvasMenu(clientX, clientY) {
         setCanvasActive();
         menuPoint = getStagePoint(clientX, clientY);
@@ -1146,6 +1237,9 @@
             const wrap = document.createElement("section");
             wrap.className = "tool-card";
             wrap.innerHTML = `<div class="card-content"></div>`;
+            wrap.addEventListener("pointerdown", (event) => {
+                if (event.button === 0) this.workspace.bringToFront(this);
+            });
             return wrap;
         }
 
@@ -1236,21 +1330,40 @@
             }
         }
 
-        scheduleAutoFit() {
+        scheduleAutoFit(allowShrink = false) {
             if (!isDesktopPointer || this.autoFitFrame) return;
             this.autoFitFrame = requestAnimationFrame(() => {
                 this.autoFitFrame = 0;
-                this.fitToContent();
+                this.fitToContent(allowShrink);
             });
         }
 
-        fitToContent() {
+        measureScrollerContentHeight(scroller) {
+            const styles = window.getComputedStyle(scroller);
+            const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+            const bottom = Array.from(scroller.children).reduce((max, child) => {
+                return Math.max(max, child.offsetTop + child.offsetHeight);
+            }, 0);
+            return bottom ? bottom + paddingBottom : scroller.scrollHeight;
+        }
+
+        fitToContent(allowShrink = false) {
             if (!isDesktopPointer) return;
             const scroller = this.contentEl.querySelector(".pane-body,.select-body");
             if (!scroller) return;
 
             const heightOverflow = scroller.scrollHeight - scroller.clientHeight;
             const widthOverflow = scroller.scrollWidth - scroller.clientWidth;
+            if (allowShrink) {
+                const nextHeight = Math.max(DEFAULT_CARD_HEIGHT, this.measureScrollerContentHeight(scroller) + AUTO_FIT_PADDING);
+                const nextWidth = widthOverflow > 1 ? this.width + widthOverflow + AUTO_FIT_PADDING : this.width;
+                this.setSize(nextWidth, nextHeight);
+                if (scroller.scrollHeight - scroller.clientHeight > 1 || scroller.scrollWidth - scroller.clientWidth > 1) {
+                    this.scheduleAutoFit();
+                }
+                return;
+            }
+
             if (heightOverflow <= 1 && widthOverflow <= 1) return;
 
             this.setSize(
@@ -1263,7 +1376,7 @@
             }
         }
 
-        observeAutoFit(scroller) {
+        observeAutoFit(scroller, allowShrinkOnStart = false) {
             if (!isDesktopPointer || !scroller) return;
             this.stopAutoFit();
 
@@ -1285,7 +1398,7 @@
             scroller.addEventListener("input", () => this.scheduleAutoFit());
             scroller.addEventListener("change", () => this.scheduleAutoFit());
             scroller.addEventListener("click", () => this.scheduleAutoFit());
-            this.scheduleAutoFit();
+            this.scheduleAutoFit(allowShrinkOnStart);
         }
 
         disposeTool() {
@@ -1347,7 +1460,7 @@
             };
 
             paint();
-            this.observeAutoFit(this.contentEl.querySelector(".select-body"));
+            this.observeAutoFit(this.contentEl.querySelector(".select-body"), true);
             searchInput.addEventListener("input", (event) => paint(event.target.value));
             grid.addEventListener("click", (event) => {
                 const button = event.target.closest(".tool-picker");
@@ -1383,7 +1496,7 @@
             const body = this.contentEl.querySelector('[data-role="tool-body"]');
             const headerActions = this.contentEl.querySelector('[data-role="tool-head-actions"]');
             this.cleanup = tool.mount(body, { showToast, shake }, { headerActions }) || null;
-            this.observeAutoFit(body);
+            this.observeAutoFit(body, true);
             this.contentEl.querySelector('[data-action="back"]').addEventListener("click", () => {
                 this.toolId = null;
                 this.render();
@@ -1669,9 +1782,34 @@
     });
 
     window.addEventListener("resize", () => workspace.updateCanvasBounds());
+    window.addEventListener("scroll", hideHeadTooltip, true);
+
+    document.addEventListener("pointerover", (event) => {
+        const button = event.target.closest(".head-help");
+        if (!button || activeTooltipButton === button) return;
+        showHeadTooltip(button);
+    });
+
+    document.addEventListener("pointerout", (event) => {
+        const button = event.target.closest(".head-help");
+        if (!button || button.contains(event.relatedTarget)) return;
+        hideHeadTooltip();
+    });
+
+    document.addEventListener("focusin", (event) => {
+        const button = event.target.closest(".head-help");
+        if (button) showHeadTooltip(button);
+    });
+
+    document.addEventListener("focusout", (event) => {
+        if (event.target.closest(".head-help")) hideHeadTooltip();
+    });
 
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") hideCanvasMenu();
+        if (event.key === "Escape") {
+            hideCanvasMenu();
+            hideHeadTooltip();
+        }
     });
 
     canvasMenu.querySelector('[data-action="add-card"]').addEventListener("click", () => {

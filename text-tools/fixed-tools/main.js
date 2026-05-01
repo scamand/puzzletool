@@ -52,6 +52,8 @@
     });
 
     let toastTimer = null;
+    let activeTooltipButton = null;
+    let headTooltip = null;
 
     function showToast(message) {
         toast.textContent = message;
@@ -97,6 +99,36 @@
         canvasMenu.classList.remove("show");
     }
 
+    function getHeadTooltip() {
+        if (headTooltip) return headTooltip;
+        headTooltip = document.createElement("div");
+        headTooltip.className = "head-tooltip";
+        document.body.appendChild(headTooltip);
+        return headTooltip;
+    }
+
+    function hideHeadTooltip() {
+        activeTooltipButton = null;
+        if (headTooltip) headTooltip.classList.remove("show");
+    }
+
+    function showHeadTooltip(button) {
+        const tip = button && button.dataset.tip;
+        if (!tip) return;
+
+        activeTooltipButton = button;
+        const tooltip = getHeadTooltip();
+        tooltip.textContent = tip;
+        tooltip.classList.add("show");
+
+        const buttonRect = button.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const left = Math.max(12, Math.min(buttonRect.left + buttonRect.width / 2 - tooltipRect.width / 2, window.innerWidth - tooltipRect.width - 12));
+        const top = Math.max(12, Math.min(buttonRect.bottom + 10, window.innerHeight - tooltipRect.height - 12));
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    }
+
     function showCanvasMenu(clientX, clientY) {
         setCanvasActive();
         menuPoint = getStagePoint(clientX, clientY);
@@ -140,6 +172,9 @@
             const wrap = document.createElement("section");
             wrap.className = "tool-card";
             wrap.innerHTML = `<div class="card-content"></div>`;
+            wrap.addEventListener("pointerdown", (event) => {
+                if (event.button === 0) this.workspace.bringToFront(this);
+            });
             return wrap;
         }
 
@@ -230,21 +265,40 @@
             }
         }
 
-        scheduleAutoFit() {
+        scheduleAutoFit(allowShrink = false) {
             if (!isDesktopPointer || this.autoFitFrame) return;
             this.autoFitFrame = requestAnimationFrame(() => {
                 this.autoFitFrame = 0;
-                this.fitToContent();
+                this.fitToContent(allowShrink);
             });
         }
 
-        fitToContent() {
+        measureScrollerContentHeight(scroller) {
+            const styles = window.getComputedStyle(scroller);
+            const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+            const bottom = Array.from(scroller.children).reduce((max, child) => {
+                return Math.max(max, child.offsetTop + child.offsetHeight);
+            }, 0);
+            return bottom ? bottom + paddingBottom : scroller.scrollHeight;
+        }
+
+        fitToContent(allowShrink = false) {
             if (!isDesktopPointer) return;
             const scroller = this.contentEl.querySelector(".pane-body,.select-body");
             if (!scroller) return;
 
             const heightOverflow = scroller.scrollHeight - scroller.clientHeight;
             const widthOverflow = scroller.scrollWidth - scroller.clientWidth;
+            if (allowShrink) {
+                const nextHeight = Math.max(DEFAULT_CARD_HEIGHT, this.measureScrollerContentHeight(scroller) + AUTO_FIT_PADDING);
+                const nextWidth = widthOverflow > 1 ? this.width + widthOverflow + AUTO_FIT_PADDING : this.width;
+                this.setSize(nextWidth, nextHeight);
+                if (scroller.scrollHeight - scroller.clientHeight > 1 || scroller.scrollWidth - scroller.clientWidth > 1) {
+                    this.scheduleAutoFit();
+                }
+                return;
+            }
+
             if (heightOverflow <= 1 && widthOverflow <= 1) return;
 
             this.setSize(
@@ -257,7 +311,7 @@
             }
         }
 
-        observeAutoFit(scroller) {
+        observeAutoFit(scroller, allowShrinkOnStart = false) {
             if (!isDesktopPointer || !scroller) return;
             this.stopAutoFit();
 
@@ -279,7 +333,7 @@
             scroller.addEventListener("input", () => this.scheduleAutoFit());
             scroller.addEventListener("change", () => this.scheduleAutoFit());
             scroller.addEventListener("click", () => this.scheduleAutoFit());
-            this.scheduleAutoFit();
+            this.scheduleAutoFit(allowShrinkOnStart);
         }
 
         disposeTool() {
@@ -341,7 +395,7 @@
             };
 
             paint();
-            this.observeAutoFit(this.contentEl.querySelector(".select-body"));
+            this.observeAutoFit(this.contentEl.querySelector(".select-body"), true);
             searchInput.addEventListener("input", (event) => paint(event.target.value));
             grid.addEventListener("click", (event) => {
                 const button = event.target.closest(".tool-picker");
@@ -377,7 +431,7 @@
             const body = this.contentEl.querySelector('[data-role="tool-body"]');
             const headerActions = this.contentEl.querySelector('[data-role="tool-head-actions"]');
             this.cleanup = tool.mount(body, { showToast, shake }, { headerActions }) || null;
-            this.observeAutoFit(body);
+            this.observeAutoFit(body, true);
             this.contentEl.querySelector('[data-action="back"]').addEventListener("click", () => {
                 this.toolId = null;
                 this.render();
@@ -663,9 +717,34 @@
     });
 
     window.addEventListener("resize", () => workspace.updateCanvasBounds());
+    window.addEventListener("scroll", hideHeadTooltip, true);
+
+    document.addEventListener("pointerover", (event) => {
+        const button = event.target.closest(".head-help");
+        if (!button || activeTooltipButton === button) return;
+        showHeadTooltip(button);
+    });
+
+    document.addEventListener("pointerout", (event) => {
+        const button = event.target.closest(".head-help");
+        if (!button || button.contains(event.relatedTarget)) return;
+        hideHeadTooltip();
+    });
+
+    document.addEventListener("focusin", (event) => {
+        const button = event.target.closest(".head-help");
+        if (button) showHeadTooltip(button);
+    });
+
+    document.addEventListener("focusout", (event) => {
+        if (event.target.closest(".head-help")) hideHeadTooltip();
+    });
 
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") hideCanvasMenu();
+        if (event.key === "Escape") {
+            hideCanvasMenu();
+            hideHeadTooltip();
+        }
     });
 
     canvasMenu.querySelector('[data-action="add-card"]').addEventListener("click", () => {

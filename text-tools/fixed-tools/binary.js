@@ -1,236 +1,191 @@
 (function () {
-    const BASE_OPTIONS = {
-        2: {
-            label: "二进制 ASCII",
-            bytes: 8,
-            tokenPattern: /^[01]{8}$/,
-            allowedKeys: "01"
-        },
-        16: {
-            label: "十六进制 ASCII",
-            bytes: 2,
-            tokenPattern: /^[0-9A-Fa-f]{2}$/,
-            allowedKeys: "0123456789ABCDEF"
-        }
-    };
-
-    const KEY_ORDER = [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F"
+    const BASES = [
+        { id: "hex", label: "HEX", base: 16, keys: "0123456789ABCDEF" },
+        { id: "dec", label: "DEC", base: 10, keys: "0123456789" },
+        { id: "oct", label: "OCT", base: 8, keys: "01234567" },
+        { id: "bin", label: "BIN", base: 2, keys: "01" }
     ];
+    const KEY_ORDER = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
 
-    function getBase(container) {
-        return Number.parseInt(container.querySelector('[data-role="base-select"]').value, 10);
+    function parseToken(token, base) {
+        let value = 0n;
+        for (const char of token.toUpperCase()) {
+            const digit = Number.parseInt(char, 16);
+            if (!Number.isInteger(digit) || digit >= base) return null;
+            value = value * BigInt(base) + BigInt(digit);
+        }
+        return value;
     }
 
-    function encodeTextToBase(text, base) {
-        const cfg = BASE_OPTIONS[base];
-        return Array.from(text)
-            .map((char) => char.charCodeAt(0).toString(base).toUpperCase().padStart(cfg.bytes, "0"))
-            .join(" ");
-    }
-
-    function decodeBaseToText(value, base) {
-        const cfg = BASE_OPTIONS[base];
+    function parseGroups(value, base) {
         return value
             .trim()
             .split(/\s+/)
-            .map((token) => {
-                if (cfg.tokenPattern.test(token)) {
-                    return String.fromCharCode(parseInt(token, base));
-                }
-                return token;
-            })
-            .join("");
+            .filter(Boolean)
+            .map((token) => parseToken(token, base))
+            .filter((item) => item !== null);
     }
 
-    function updateModeUI(container, mode) {
-        const inputPanel = container.querySelector('[data-role="panel-input"]');
-        const keypadPanel = container.querySelector('[data-role="panel-keypad"]');
-        const modeInputBtn = container.querySelector('[data-role="mode-input"]');
-        const modeKeypadBtn = container.querySelector('[data-role="mode-keypad"]');
-
-        const isInput = mode === "input";
-        inputPanel.style.display = isInput ? "" : "none";
-        keypadPanel.style.display = isInput ? "none" : "";
-        modeInputBtn.classList.toggle("active", isInput);
-        modeKeypadBtn.classList.toggle("active", !isInput);
+    function formatGroups(groups, base) {
+        if (!groups.length) return "0";
+        return groups.map((value) => value.toString(base).toUpperCase()).join(" ");
     }
 
-    function updateBaseDependentUI(container) {
-        const base = getBase(container);
-        const cfg = BASE_OPTIONS[base];
-        const source = container.querySelector('[data-role="source"]');
-        const encodeBtn = container.querySelector('[data-role="encode"]');
-        const decodeBtn = container.querySelector('[data-role="decode"]');
-        const keypadHint = container.querySelector('[data-role="keypad-hint"]');
+    function mountProgrammerRadix(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="选择 HEX、DEC、OCT 或 BIN 后输入数字。空格分隔多个数字；Backspace 删除一位，Delete 清空。无效按键会变暗且无法输入。">❓</button>`;
+        }
 
-        source.placeholder = base === 2 ? "输入文本或二进制字节（8位分组）" : "输入文本或十六进制字节（2位分组）";
-        encodeBtn.textContent = `文本 -> ${cfg.label}`;
-        decodeBtn.textContent = `${cfg.label} -> 文本`;
-        keypadHint.textContent = `按键模式：当前为${cfg.label}，每组${cfg.bytes}位，使用空格分隔。`;
+        let activeBase = 10;
+        let inputValue = "";
+        let cleanupKeyboard = null;
 
-        container.querySelectorAll(".radix-key").forEach((btn) => {
-            const key = btn.dataset.key;
-            btn.disabled = !cfg.allowedKeys.includes(key);
-        });
-    }
+        container.innerHTML = `<div class="programmer-tool">
+            <div class="radix-display" data-role="display">
+                ${BASES.map((item) => `<div class="radix-row" role="button" tabindex="0" data-base="${item.base}">
+                    <span class="radix-label">${item.label}</span>
+                    <span class="radix-value" data-role="value-${item.base}">0</span>
+                </div>`).join("")}
+            </div>
+            <div class="radix-keypad">
+                ${KEY_ORDER.map((key) => `<button class="radix-key" type="button" data-key="${key}">${key}</button>`).join("")}
+            </div>
+        </div>`;
 
-    function mountRadixConverter(container, helpers) {
-        container.innerHTML = `<div class="panel-note">在同一卡片内支持二进制和十六进制转换，可通过下拉切换进制；支持“输入模式”和“按键模式”。</div>
-            <div class="stack">
-                <div class="controls-row">
-                    <label class="input-label" style="margin:0;align-self:center;">当前进制</label>
-                    <select class="text-input" data-role="base-select" style="min-height:44px;max-width:220px;">
-                        <option value="2">二进制 ASCII</option>
-                        <option value="16">十六进制 ASCII</option>
-                    </select>
-                </div>
-                <div class="controls-row">
-                    <button class="action-btn active" data-role="mode-input">输入模式</button>
-                    <button class="action-btn" data-role="mode-keypad">按键模式</button>
-                </div>
+        const rows = Array.from(container.querySelectorAll(".radix-row"));
+        const keys = Array.from(container.querySelectorAll(".radix-key"));
 
-                <div data-role="panel-input">
-                    <div>
-                        <label class="input-label">输入内容</label>
-                        <textarea class="text-input" data-role="source" placeholder="输入文本或二进制字节（8位分组）"></textarea>
-                    </div>
-                    <div class="controls-row">
-                        <button class="action-btn" data-role="encode">文本 -> 二进制 ASCII</button>
-                        <button class="action-btn" data-role="decode">二进制 ASCII -> 文本</button>
-                        <button class="action-btn warn" data-role="clear-input">清空</button>
-                    </div>
-                    <div>
-                        <label class="input-label">输出结果</label>
-                        <textarea class="text-output" data-role="output" readonly placeholder="转换结果会显示在这里"></textarea>
-                    </div>
-                </div>
+        const currentBaseInfo = () => BASES.find((item) => item.base === activeBase) || BASES[1];
 
-                <div data-role="panel-keypad" style="display:none;">
-                    <div class="panel-note" data-role="keypad-hint">按键模式：当前为二进制 ASCII，每组8位，使用空格分隔。</div>
-                    <div>
-                        <label class="input-label">屏幕输入</label>
-                        <textarea class="text-input" data-role="keypad-screen" placeholder="可直接输入或使用下方虚拟按键" style="min-height:96px;"></textarea>
-                    </div>
-                    <div class="tool-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
-                        ${KEY_ORDER.map((key) => `<button class="tool-picker radix-key" type="button" data-key="${key}">${key}</button>`).join("")}
-                        <button class="tool-picker" type="button" data-action="space">空格</button>
-                        <button class="tool-picker" type="button" data-action="backspace">退格</button>
-                        <button class="tool-picker" type="button" data-action="clear-keypad">清空</button>
-                        <button class="tool-picker" type="button" data-action="decode-keypad">得到输出</button>
-                    </div>
-                    <div>
-                        <label class="input-label">按键模式输出</label>
-                        <textarea class="text-output" data-role="keypad-output" readonly placeholder="按键解码结果会显示在这里"></textarea>
-                    </div>
-                </div>
-            </div>`;
-
-        const baseSelect = container.querySelector('[data-role="base-select"]');
-        const source = container.querySelector('[data-role="source"]');
-        const output = container.querySelector('[data-role="output"]');
-        const keypadScreen = container.querySelector('[data-role="keypad-screen"]');
-        const keypadOutput = container.querySelector('[data-role="keypad-output"]');
-        const modeInputBtn = container.querySelector('[data-role="mode-input"]');
-        const modeKeypadBtn = container.querySelector('[data-role="mode-keypad"]');
-        const encodeBtn = container.querySelector('[data-role="encode"]');
-        const decodeBtn = container.querySelector('[data-role="decode"]');
-        const clearInputBtn = container.querySelector('[data-role="clear-input"]');
-
-        const runInputMode = (action) => {
-            const base = getBase(container);
-            if (!source.value.trim()) {
-                helpers.showToast("请先输入内容");
-                helpers.shake(source);
-                return;
-            }
-            output.value = action === "encode" ? encodeTextToBase(source.value, base) : decodeBaseToText(source.value, base);
+        const flashKey = (key) => {
+            const button = keys.find((item) => item.dataset.key === key);
+            if (!button || button.disabled) return;
+            button.classList.remove("flash");
+            void button.offsetWidth;
+            button.classList.add("flash");
         };
 
-        const runKeypadDecode = () => {
-            const base = getBase(container);
-            if (!keypadScreen.value.trim()) {
-                helpers.showToast("请先输入按键内容");
-                helpers.shake(keypadScreen);
-                return;
-            }
-            keypadOutput.value = decodeBaseToText(keypadScreen.value, base);
-        };
+        const render = () => {
+            const groups = parseGroups(inputValue, activeBase);
 
-        baseSelect.addEventListener("change", () => updateBaseDependentUI(container));
-        modeInputBtn.addEventListener("click", () => updateModeUI(container, "input"));
-        modeKeypadBtn.addEventListener("click", () => updateModeUI(container, "keypad"));
-        encodeBtn.addEventListener("click", () => runInputMode("encode"));
-        decodeBtn.addEventListener("click", () => runInputMode("decode"));
-
-        clearInputBtn.addEventListener("click", () => {
-            source.value = "";
-            output.value = "";
-            source.focus();
-        });
-
-        container.querySelectorAll(".radix-key").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                keypadScreen.value += btn.dataset.key;
-                keypadScreen.focus();
+            rows.forEach((row) => {
+                const base = Number.parseInt(row.dataset.base, 10);
+                const valueEl = row.querySelector(".radix-value");
+                row.classList.toggle("active", base === activeBase);
+                valueEl.textContent = base === activeBase ? inputValue || "0" : formatGroups(groups, base);
             });
+
+            const allowedKeys = currentBaseInfo().keys;
+            keys.forEach((button) => {
+                const enabled = allowedKeys.includes(button.dataset.key);
+                button.disabled = !enabled;
+                button.classList.toggle("disabled", !enabled);
+            });
+        };
+
+        const chooseBase = (base) => {
+            if (base === activeBase) return;
+            const groups = parseGroups(inputValue, activeBase);
+            activeBase = base;
+            inputValue = groups.length ? formatGroups(groups, activeBase) : "";
+            render();
+        };
+
+        const pressKey = (key) => {
+            key = key.toUpperCase();
+            if (!currentBaseInfo().keys.includes(key)) return;
+            inputValue += key;
+            flashKey(key);
+            render();
+        };
+
+        const appendSpace = () => {
+            if (!inputValue || inputValue.endsWith(" ")) return;
+            inputValue += " ";
+            render();
+        };
+
+        const backspace = () => {
+            if (!inputValue) return;
+            inputValue = inputValue.slice(0, -1);
+            render();
+        };
+
+        const clear = () => {
+            inputValue = "";
+            render();
+        };
+
+        rows.forEach((row) => {
+            row.addEventListener("click", () => chooseBase(Number.parseInt(row.dataset.base, 10)));
+            row.addEventListener("keydown", (event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                chooseBase(Number.parseInt(row.dataset.base, 10));
+            });
+            row.querySelector(".radix-value").addEventListener("pointerdown", (event) => event.stopPropagation());
+            row.querySelector(".radix-value").addEventListener("click", (event) => event.stopPropagation());
         });
 
-        container.querySelector('[data-action="space"]').addEventListener("click", () => {
-            keypadScreen.value += " ";
-            keypadScreen.focus();
+        keys.forEach((button) => {
+            button.addEventListener("click", () => pressKey(button.dataset.key));
         });
 
-        container.querySelector('[data-action="backspace"]').addEventListener("click", () => {
-            keypadScreen.value = keypadScreen.value.slice(0, -1);
-            keypadScreen.focus();
-        });
+        const onKeyDown = (event) => {
+            const card = container.closest(".tool-card");
+            const isActiveCard = card && (card.matches(":hover") || card.contains(document.activeElement));
+            if (!isActiveCard) return;
 
-        container.querySelector('[data-action="clear-keypad"]').addEventListener("click", () => {
-            keypadScreen.value = "";
-            keypadOutput.value = "";
-            keypadScreen.focus();
-        });
+            const key = event.key.toUpperCase();
+            if (KEY_ORDER.includes(key)) {
+                if (!currentBaseInfo().keys.includes(key)) return;
+                event.preventDefault();
+                pressKey(key);
+            } else if (event.key === " ") {
+                event.preventDefault();
+                appendSpace();
+            } else if (event.key === "Backspace") {
+                event.preventDefault();
+                backspace();
+            } else if (event.key === "Delete") {
+                event.preventDefault();
+                clear();
+            }
+        };
 
-        container.querySelector('[data-action="decode-keypad"]').addEventListener("click", runKeypadDecode);
+        document.addEventListener("keydown", onKeyDown);
+        cleanupKeyboard = () => document.removeEventListener("keydown", onKeyDown);
+        render();
 
-        updateModeUI(container, "input");
-        updateBaseDependentUI(container);
-        return () => {};
+        return () => {
+            if (cleanupKeyboard) cleanupKeyboard();
+            if (headerActions) headerActions.innerHTML = "";
+        };
     }
 
     window.FixedToolRegistry.register({
         id: "radix-converter",
         name: "进制转换",
         icon: "🧮",
-        desc: "二进制/十六进制统一转换，支持输入与按键模式。",
+        desc: "程序员模式进制换算。",
         tags: [
             "binary",
             "hex",
-            "ascii",
+            "oct",
+            "dec",
             "2进制",
+            "8进制",
+            "10进制",
             "16进制",
             "erjinzhi",
+            "bajinzhi",
+            "shijinzhi",
             "shiliujinzhi",
             "radix",
             "jinzhi",
             "jzzh"
         ],
-        mount: mountRadixConverter
+        mount: mountProgrammerRadix
     });
 })();
