@@ -53,6 +53,13 @@
         .tool-card.dragging{z-index:50;box-shadow:var(--shadow-2)}
         .tool-card.dragging .glow-head{cursor:grabbing}
         .glow-head-title{font-size:.95rem;color:color-mix(in srgb,var(--primary) 72%,white 28%);font-weight:600}
+        .tool-head-actions{display:inline-flex;align-items:center;gap:8px}
+        .head-toggle,.head-help{min-height:30px;border-radius:8px;border:1px solid color-mix(in srgb,var(--primary) 38%,transparent);background:color-mix(in srgb,var(--surface-1) 88%,transparent);color:var(--text-main);cursor:pointer;transition:transform .18s ease,background-color .18s ease,box-shadow .18s ease}
+        .head-toggle{padding:0 10px;font-size:.82rem}
+        .head-help{position:relative;min-width:32px;padding:0}
+        .head-toggle:hover,.head-help:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--primary-soft) 76%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--primary-glow) 24%,transparent)}
+        .head-help::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 10px);z-index:5;width:260px;max-width:70vw;padding:9px 11px;border:1px solid var(--line-strong);border-radius:10px;background:color-mix(in srgb,var(--surface-1) 98%,var(--surface-2) 2%);box-shadow:var(--shadow-2),0 0 0 999px color-mix(in srgb,var(--surface-1) 12%,transparent);backdrop-filter:blur(30px) saturate(1.35);-webkit-backdrop-filter:blur(30px) saturate(1.35);color:var(--text-main);font-size:.78rem;line-height:1.45;text-align:left;white-space:normal;opacity:0;pointer-events:none;transform:translate(-50%,-4px);transition:opacity .16s ease,transform .16s ease}
+        .head-help:hover::after,.head-help:focus-visible::after{opacity:1;transform:translate(-50%,0)}
         .mini-btn{min-height:34px;padding:0 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--primary) 36%,transparent);background:color-mix(in srgb,var(--surface-1) 86%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
         .mini-btn:hover{transform:translateY(-2px);background:color-mix(in srgb,var(--primary-soft) 70%,transparent)}
         .mini-btn:active{transform:translateY(0) scale(.98)}
@@ -79,6 +86,22 @@
         .controls-row{display:flex;flex-wrap:wrap;gap:9px}
         .action-btn.warn{border-color:color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%)}
         .tool-empty{text-align:center;color:var(--text-sub);padding:28px 10px}
+        .morse-keypad{display:grid;grid-template-columns:minmax(190px,260px) minmax(0,1fr);gap:12px;align-items:stretch}
+        .morse-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+        .morse-key{position:relative;min-height:132px;border:1px solid color-mix(in srgb,var(--primary) 42%,transparent);border-radius:12px;background:color-mix(in srgb,var(--surface-3) 92%,transparent);color:var(--text-main);font-size:2.2rem;font-weight:700;cursor:pointer;overflow:hidden;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background-color .16s ease}
+        .morse-key.backspace{font-size:1.55rem}
+        .morse-key:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--primary) 70%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 22%,transparent)}
+        .morse-key.flash{animation:morsePulse .34s ease both}
+        .morse-key.flash::after{content:"";position:absolute;inset:50%;border-radius:999px;background:color-mix(in srgb,var(--primary-glow) 62%,white 12%);animation:morseRipple .46s ease-out both}
+        .morse-live{display:grid;grid-template-rows:1fr 1fr;min-height:132px;border:1px solid var(--line);border-radius:12px;background:var(--surface-3);overflow:hidden}
+        .morse-live-part{display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;min-width:0}
+        .morse-live-part:first-child{border-bottom:1px solid var(--line)}
+        .morse-sequence{font-size:1.8rem;font-weight:700;letter-spacing:2px;color:var(--text-main);overflow-wrap:anywhere}
+        .morse-letter{font-size:2.3rem;font-weight:800;color:color-mix(in srgb,var(--primary) 76%,white 24%)}
+        .morse-muted{color:var(--text-sub);font-size:.92rem}
+
+        @keyframes morsePulse{0%{transform:scale(1);box-shadow:0 0 0 color-mix(in srgb,var(--primary-glow) 0%,transparent)}38%{transform:scale(1.05);background:color-mix(in srgb,var(--primary-soft) 86%,transparent);box-shadow:0 0 34px color-mix(in srgb,var(--primary-glow) 58%,transparent),0 0 70px color-mix(in srgb,var(--primary-glow) 28%,transparent)}100%{transform:scale(1);box-shadow:0 0 12px color-mix(in srgb,var(--primary-glow) 18%,transparent)}}
+        @keyframes morseRipple{from{inset:50%;opacity:.75}to{inset:-35%;opacity:0}}
 
         .canvas-menu{position:fixed;z-index:2200;display:none;min-width:156px;padding:6px;border:1px solid var(--line-strong);border-radius:12px;background:color-mix(in srgb,var(--surface-1) 94%,transparent);box-shadow:var(--shadow-2);backdrop-filter:blur(14px)}
         .canvas-menu.show{display:block;animation:contentFade .12s ease both}
@@ -104,6 +127,8 @@
             .topbar-actions{left:8px;right:8px;top:0;justify-content:center;transform:none}
             .topbar-btn{padding:0 8px;font-size:.82rem}
             .tool-card{width:min(var(--tool-card-default-width),calc(100vw - 24px));min-width:280px}
+            .morse-keypad{grid-template-columns:1fr}
+            .morse-key{min-height:82px}
             .canvas-menu{display:none!important}
             .mobile-add-wrap{position:fixed;left:0;right:0;bottom:14px;z-index:1300;display:flex}
         }

@@ -8,24 +8,23 @@
         mount: mountRailFence
     });
 
-    function mountRailFence(container, helpers) {
-        container.innerHTML = `<div class="panel-note">栅栏密码支持两种常见方式：直栏式会按行写入、按列读取；W 型会按上下折返轨迹写入、逐轨读取。转换前会自动去掉空格和换行。</div>
-            <div class="stack">
-                <div>
-                    <label class="input-label">输入文本</label>
-                    <textarea class="text-input" placeholder="输入要转换的文本"></textarea>
-                </div>
+    function mountRailFence(container, helpers, options = {}) {
+        const headerActions = options.headerActions || null;
+        if (headerActions) {
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="栅栏密码支持直栏式分栏和 W 型轨迹。转换前会自动去掉空格和换行；勾选展示过程可以查看排列与读取方式。">❓</button>`;
+        }
+
+        container.innerHTML = `<div class="stack">
+                <textarea class="text-input" placeholder="输入要转换的文本"></textarea>
                 <div class="controls-row">
-                    <label>
-                        <span class="input-label">方式</span>
+                    <label title="方式">
                         <select class="text-input" data-role="rail-method" style="min-height:44px;max-width:190px;">
                             <option value="straight">直栏式分栏</option>
                             <option value="zigzag">W 型轨迹</option>
                         </select>
                     </label>
-                    <label>
-                        <span class="input-label">栏数</span>
-                        <input class="rail-input" type="number" min="2" max="8" step="1" value="3">
+                    <label title="栏数">
+                        <input class="rail-input" type="number" min="2" max="8" step="1" value="3" aria-label="栏数">
                     </label>
                     <label style="display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--text-sub);">
                         <input type="checkbox" data-role="show-process">
@@ -35,12 +34,8 @@
                     <button class="action-btn" data-action="decrypt">解密</button>
                     <button class="action-btn warn" data-action="clear">清空</button>
                 </div>
-                <div>
-                    <label class="input-label">输出结果</label>
-                    <textarea class="text-output" readonly placeholder="转换结果会显示在这里"></textarea>
-                </div>
+                <textarea class="text-output" readonly placeholder="转换结果会显示在这里"></textarea>
                 <div data-role="process-wrap" style="display:none;">
-                    <label class="input-label">排列与读取过程</label>
                     <textarea class="text-output" data-role="process-output" readonly style="min-height:170px;font-family:Consolas,'Courier New',monospace;white-space:pre;" placeholder="勾选展示过程后会显示排列方式"></textarea>
                 </div>
             </div>`;
@@ -238,6 +233,8 @@
             input.focus();
         });
 
-        return () => {};
+        return () => {
+            if (headerActions) headerActions.innerHTML = "";
+        };
     }
 })();

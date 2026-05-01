@@ -367,6 +367,7 @@
             this.contentEl.innerHTML = `<div class="pane-header">
                     <div class="glow-head">
                         <span class="glow-head-title">${tool.icon} ${tool.name}</span>
+                        <span class="tool-head-actions" data-role="tool-head-actions"></span>
                         <button class="mini-btn" data-action="back">返回工具选择</button>
                     </div>
                     <button class="close-btn ${canClose ? "" : "hidden"}" data-action="remove" title="关闭当前卡片">×</button>
@@ -374,7 +375,8 @@
                 <div class="pane-body" data-role="tool-body"></div>`;
 
             const body = this.contentEl.querySelector('[data-role="tool-body"]');
-            this.cleanup = tool.mount(body, { showToast, shake }) || null;
+            const headerActions = this.contentEl.querySelector('[data-role="tool-head-actions"]');
+            this.cleanup = tool.mount(body, { showToast, shake }, { headerActions }) || null;
             this.observeAutoFit(body);
             this.contentEl.querySelector('[data-action="back"]').addEventListener("click", () => {
                 this.toolId = null;
