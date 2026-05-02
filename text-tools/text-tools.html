@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            var key = "theme_manual_override";
+            var theme = null;
+            try {
+                var saved = window.localStorage.getItem(key);
+                if (saved === "light" || saved === "dark") theme = saved;
+            } catch (_) {}
+            if (!theme) {
+                var hour = new Date().getHours();
+                theme = (hour >= 19 || hour < 7) ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="../things/text-icon.svg">
+    <title>文字工具</title>
+    <link rel="stylesheet" href="../theme/light-theme.css">
+    <link rel="stylesheet" href="../theme/dark-theme.css">
+    <link rel="stylesheet" href="../theme/common-styles.css">
+    <link rel="stylesheet" href="./text-tools.css">
+</head>
+<body>
+<div class="fixed-shell page-enter">
+    <div class="fixed-topbar">
+        <a href="../index.html" class="back-link">← 返回工具箱</a>
+        <h1 class="main-title"><span class="title-wrap">文字工具<span class="help-icon" id="helpBtn" title="查看帮助">🤔</span></span></h1>
+        <div class="topbar-actions" aria-label="画布操作">
+            <button class="topbar-btn warn" id="clearCardsBtn" type="button">清空</button>
+            <button class="topbar-btn" id="arrangeCardsBtn" type="button">整理</button>
+            <button class="topbar-btn" id="saveLayoutBtn" type="button">保存</button>
+            <button class="topbar-btn" id="loadLayoutBtn" type="button">加载</button>
+        </div>
+    </div>
+    <div class="cards-stage" id="cardsStage">
+        <div class="cards-root" id="cardsRoot"></div>
+    </div>
+    <div class="mobile-add-wrap">
+        <button class="mobile-add-btn" id="mobileAddBtn" type="button">+ 添加卡片</button>
+    </div>
+</div>
+<div class="modal" id="helpModal">
+    <div class="modal-content">
+        <span class="modal-close" id="closeModal">&times;</span>
+        <h2 class="modal-title">使用说明</h2>
+        <div class="modal-body">
+            <p>1. 在卡片中搜索并选择需要的文字工具。</p>
+            <p>2. 按住右键拖拽画布空白处可以移动画布，右键单击空白处可从菜单添加新卡片。</p>
+            <p>3. 拖动卡片左上角标题标签可以移动卡片，拖动右下角可以调整大小。</p>
+            <p>4. 操作画布后顶部标题会收起，悬停标题区域会展开。</p>
+            <p>5. 顶部按钮可清空画布、整理卡片、保存或加载当前页面设置。</p>
+            <p>6. 点击卡片右上角的"×"可关闭当前卡片（至少保留一张）。</p>
+            <p>7. 移动端可使用下方"+ 添加卡片"按钮。</p>
+        </div>
+    </div>
+</div>
+<div class="canvas-menu" id="canvasMenu">
+    <button type="button" data-action="add-card">添加卡片</button>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../theme/theme-system.js"></script>
+<script src="../theme/cache-client.js" defer></script>
+<script src="./tools/bundle.js"></script>
+</body>
+</html>
+

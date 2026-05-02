@@ -36,7 +36,7 @@
     const registry = window.FixedToolRegistry;
     const utils = window.FixedToolUtils;
     if (!registry || !utils) {
-        toast.textContent = "固定密码工具加载失败，请刷新页面重试";
+        toast.textContent = "文字工具加载失败，请刷新页面重试";
         toast.classList.add("show");
         return;
     }
@@ -354,7 +354,7 @@
         renderSelectView() {
             const canClose = this.workspace.totalCards > 1;
             this.contentEl.innerHTML = `<div class="view-header">
-                    <div class="glow-head"><span class="glow-head-title">选择固定密码工具</span></div>
+                    <div class="glow-head"><span class="glow-head-title">选择文字工具</span></div>
                     <button class="close-btn ${canClose ? "" : "hidden"}" data-action="remove" title="关闭当前卡片">×</button>
                 </div>
                 <div class="select-body">

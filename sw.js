@@ -1,4 +1,4 @@
-const CACHE_VERSION = "puzzletool-v1";
+const CACHE_VERSION = "puzzletool-v2";
 const APP_CACHE = `${CACHE_VERSION}-app`;
 
 const PRECACHE_URLS = [
@@ -11,13 +11,10 @@ const PRECACHE_URLS = [
     "./theme/theme-system.js",
     "./theme/cache-client.js",
     "./things/puzzle.svg",
-    "./things/shift-icon.svg",
-    "./things/cipher-icon.svg",
-    "./things/fixed-icon.svg",
-    "./text-tools/shift-cipher.html",
-    "./text-tools/cipher-table.html",
-    "./text-tools/fixed-cipher.html",
-    "./text-tools/fixed-tools/fixed-tools.bundle.js"
+    "./things/text-icon.svg",
+    "./text-tools/text-tools.html",
+    "./text-tools/text-tools.css",
+    "./text-tools/tools/bundle.js"
 ];
 
 function sameAppUrl(url) {
