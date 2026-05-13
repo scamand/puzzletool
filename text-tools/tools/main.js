@@ -14,6 +14,11 @@
     const arrangeCardsBtn = document.getElementById("arrangeCardsBtn");
     const saveLayoutBtn = document.getElementById("saveLayoutBtn");
     const loadLayoutBtn = document.getElementById("loadLayoutBtn");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsModal = document.getElementById("settingsModal");
+    const closeSettings = document.getElementById("closeSettings");
+    const resetAllSettingsBtn = document.getElementById("resetAllSettingsBtn");
+    const cardSettingsList = document.getElementById("cardSettingsList");
     const toast = document.getElementById("toast");
 
     if (
@@ -28,6 +33,11 @@
         !arrangeCardsBtn ||
         !saveLayoutBtn ||
         !loadLayoutBtn ||
+        !settingsBtn ||
+        !settingsModal ||
+        !closeSettings ||
+        !resetAllSettingsBtn ||
+        !cardSettingsList ||
         !toast
     ) {
         return;
@@ -44,6 +54,9 @@
     const TOOLS = registry.getTools();
     const TOOL_MAP = registry.getToolMap();
     const { shake } = utils;
+    const APP_CONFIG = window.TextToolsConfig || {};
+    const CARD_CONFIG = APP_CONFIG.card || {};
+    const STORAGE_CONFIG = APP_CONFIG.storage || {};
 
     helpBtn.addEventListener("click", () => helpModal.classList.add("show"));
     closeModal.addEventListener("click", () => helpModal.classList.remove("show"));
@@ -62,26 +75,163 @@
         toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
     }
 
-    function readCssPx(name, fallback) {
-        const root = document.querySelector(".fixed-shell") || document.documentElement;
-        const value = window.getComputedStyle(root).getPropertyValue(name).trim();
-        const number = Number.parseFloat(value);
+    function readNumber(value, fallback = 0) {
+        const number = Number(value);
         return Number.isFinite(number) ? number : fallback;
     }
 
+    function readConfigNumber(value, name) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) {
+            throw new Error(`TextToolsConfig.${name} 必须是数字`);
+        }
+        return number;
+    }
+
     const isDesktopPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const MAX_CARDS = 99;
-    const CARD_GAP = 34;
-    const ARRANGE_MARGIN_X = 40;
-    const ARRANGE_MARGIN_TOP = 24;
-    const DEFAULT_CARD_WIDTH = readCssPx("--tool-card-default-width", 700);
-    const DEFAULT_CARD_HEIGHT = readCssPx("--tool-card-default-height", 400);
-    const CARD_MIN_WIDTH = readCssPx("--tool-card-min-width", 360);
-    const CARD_MIN_HEIGHT = readCssPx("--tool-card-min-height", 260);
-    const AUTO_FIT_PADDING = 8;
-    const LAYOUT_STORAGE_KEY = "fixed_cipher_layout_v1";
+    const MAX_CARDS = readConfigNumber(CARD_CONFIG.maxCards, "card.maxCards");
+    const CARD_GAP = readConfigNumber(CARD_CONFIG.gap, "card.gap");
+    const ARRANGE_MARGIN_X = readConfigNumber(CARD_CONFIG.arrangeMarginX, "card.arrangeMarginX");
+    const ARRANGE_MARGIN_TOP = readConfigNumber(CARD_CONFIG.arrangeMarginTop, "card.arrangeMarginTop");
+    const DEFAULT_CARD_WIDTH = readConfigNumber(CARD_CONFIG.defaultWidth, "card.defaultWidth");
+    const DEFAULT_CARD_HEIGHT = readConfigNumber(CARD_CONFIG.defaultHeight, "card.defaultHeight");
+    const CARD_MIN_WIDTH = readConfigNumber(CARD_CONFIG.minWidth, "card.minWidth");
+    const CARD_MIN_HEIGHT = readConfigNumber(CARD_CONFIG.minHeight, "card.minHeight");
+    const AUTO_FIT_PADDING = readConfigNumber(CARD_CONFIG.autoFitPadding, "card.autoFitPadding");
+    const LAYOUT_STORAGE_KEY = STORAGE_CONFIG.layout;
+    const CARD_DEFAULTS_STORAGE_KEY = STORAGE_CONFIG.cardDefaults;
     let menuPoint = null;
+    let menuCard = null;
     let suppressContextMenu = false;
+    let cardDefaultPrefs = loadCardDefaultPrefs();
+
+    function applyCardCssVariables() {
+        const root = document.querySelector(".fixed-shell") || document.documentElement;
+        root.style.setProperty("--tool-card-default-width", `${DEFAULT_CARD_WIDTH}px`);
+        root.style.setProperty("--tool-card-default-height", `${DEFAULT_CARD_HEIGHT}px`);
+        root.style.setProperty("--tool-card-min-width", `${CARD_MIN_WIDTH}px`);
+        root.style.setProperty("--tool-card-min-height", `${CARD_MIN_HEIGHT}px`);
+    }
+
+    function loadCardDefaultPrefs() {
+        try {
+            const data = JSON.parse(window.localStorage.getItem(CARD_DEFAULTS_STORAGE_KEY) || "{}");
+            return data && typeof data === "object" && data.tools && typeof data.tools === "object" ? data : { tools: {} };
+        } catch (_) {
+            return { tools: {} };
+        }
+    }
+
+    function saveCardDefaultPrefs() {
+        try {
+            window.localStorage.setItem(CARD_DEFAULTS_STORAGE_KEY, JSON.stringify(cardDefaultPrefs));
+            return true;
+        } catch (_) {
+            showToast("保存失败，浏览器可能限制了本地存储");
+            return false;
+        }
+    }
+
+    function normalizeSize(width, height) {
+        return {
+            width: Math.max(CARD_MIN_WIDTH, Math.round(readNumber(width, DEFAULT_CARD_WIDTH))),
+            height: Math.max(CARD_MIN_HEIGHT, Math.round(readNumber(height, DEFAULT_CARD_HEIGHT)))
+        };
+    }
+
+    function getToolDefaultSize(toolId) {
+        if (!toolId || !cardDefaultPrefs.tools[toolId]) return null;
+        const size = normalizeSize(cardDefaultPrefs.tools[toolId].width, cardDefaultPrefs.tools[toolId].height);
+        return Number.isFinite(size.width) && Number.isFinite(size.height) ? size : null;
+    }
+
+    function setToolDefaultSize(toolId, width, height) {
+        if (!toolId || !TOOL_MAP[toolId]) return false;
+        cardDefaultPrefs.tools[toolId] = normalizeSize(width, height);
+        return saveCardDefaultPrefs();
+    }
+
+    function clearToolDefaultSize(toolId) {
+        if (!toolId || !cardDefaultPrefs.tools[toolId]) return false;
+        delete cardDefaultPrefs.tools[toolId];
+        return saveCardDefaultPrefs();
+    }
+
+    function clearAllToolDefaultSizes() {
+        cardDefaultPrefs = { tools: {} };
+        return saveCardDefaultPrefs();
+    }
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char]));
+    }
+
+    function getDisplaySize(toolId) {
+        return getToolDefaultSize(toolId) || { width: DEFAULT_CARD_WIDTH, height: DEFAULT_CARD_HEIGHT };
+    }
+
+    function renderCardSettings() {
+        if (!TOOLS.length) {
+            cardSettingsList.innerHTML = '<div class="settings-empty">暂无可设置的工具。</div>';
+            return;
+        }
+
+        cardSettingsList.innerHTML = TOOLS.map((tool) => {
+            const size = getDisplaySize(tool.id);
+            const isCustom = Boolean(cardDefaultPrefs.tools[tool.id]);
+            const otherTools = TOOLS.filter((item) => item.id !== tool.id);
+            return `<details class="settings-row" data-tool="${escapeHTML(tool.id)}">
+                <summary>
+                    <span class="settings-row-title">${escapeHTML(tool.icon)} ${escapeHTML(tool.name)}</span>
+                    <span class="settings-row-meta">${isCustom ? "自定义" : "默认"} · ${size.width} × ${size.height}</span>
+                </summary>
+                <div class="settings-row-body">
+                    <div class="settings-number-grid">
+                        <label class="settings-field">
+                            <span>默认宽度</span>
+                            <input type="number" min="${CARD_MIN_WIDTH}" step="1" data-role="width" value="${size.width}">
+                        </label>
+                        <label class="settings-field">
+                            <span>默认高度</span>
+                            <input type="number" min="${CARD_MIN_HEIGHT}" step="1" data-role="height" value="${size.height}">
+                        </label>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="mini-btn" type="button" data-action="save-tool-size">保存</button>
+                        <button class="mini-btn" type="button" data-action="reset-tool-size">恢复默认值</button>
+                        <button class="mini-btn" type="button" data-action="toggle-apply-targets">应用于其他</button>
+                    </div>
+                    <div class="apply-targets" data-role="apply-targets">
+                        <div class="apply-targets-list">
+                            ${otherTools.map((item) => `<label class="inline-check">
+                                <input type="checkbox" value="${escapeHTML(item.id)}">
+                                <span>${escapeHTML(item.icon)} ${escapeHTML(item.name)}</span>
+                            </label>`).join("")}
+                        </div>
+                        <button class="action-btn" type="button" data-action="apply-to-selected">应用到选中工具</button>
+                    </div>
+                </div>
+            </details>`;
+        }).join("");
+    }
+
+    function openSettings() {
+        renderCardSettings();
+        settingsModal.classList.add("show");
+    }
+
+    function closeSettingsModal() {
+        settingsModal.classList.remove("show");
+    }
+
+    applyCardCssVariables();
+    setCanvasMenuMode("canvas");
 
     function setCanvasActive() {
         document.body.classList.add("canvas-active");
@@ -97,6 +247,28 @@
 
     function hideCanvasMenu() {
         canvasMenu.classList.remove("show");
+        menuCard = null;
+    }
+
+    function setCanvasMenuMode(mode) {
+        canvasMenu.querySelectorAll("[data-action]").forEach((button) => {
+            const action = button.dataset.action;
+            const showForCanvas = mode === "canvas" && action === "add-card";
+            const showForCard = mode === "card" && ["save-card-default", "reset-card-default"].includes(action);
+            button.hidden = !showForCanvas && !showForCard;
+        });
+    }
+
+    function positionCanvasMenu(clientX, clientY) {
+        canvasMenu.style.left = `${clientX}px`;
+        canvasMenu.style.top = `${clientY}px`;
+        canvasMenu.classList.add("show");
+
+        const rect = canvasMenu.getBoundingClientRect();
+        const maxLeft = window.innerWidth - rect.width - 8;
+        const maxTop = window.innerHeight - rect.height - 8;
+        canvasMenu.style.left = `${Math.max(8, Math.min(clientX, maxLeft))}px`;
+        canvasMenu.style.top = `${Math.max(8, Math.min(clientY, maxTop))}px`;
     }
 
     function getHeadTooltip() {
@@ -131,16 +303,19 @@
 
     function showCanvasMenu(clientX, clientY) {
         setCanvasActive();
+        menuCard = null;
+        setCanvasMenuMode("canvas");
         menuPoint = getStagePoint(clientX, clientY);
-        canvasMenu.style.left = `${clientX}px`;
-        canvasMenu.style.top = `${clientY}px`;
-        canvasMenu.classList.add("show");
+        positionCanvasMenu(clientX, clientY);
+    }
 
-        const rect = canvasMenu.getBoundingClientRect();
-        const maxLeft = window.innerWidth - rect.width - 8;
-        const maxTop = window.innerHeight - rect.height - 8;
-        canvasMenu.style.left = `${Math.max(8, Math.min(clientX, maxLeft))}px`;
-        canvasMenu.style.top = `${Math.max(8, Math.min(clientY, maxTop))}px`;
+    function showCardMenu(card, clientX, clientY) {
+        if (!card || !card.toolId) return;
+        setCanvasActive();
+        menuPoint = null;
+        menuCard = card;
+        setCanvasMenuMode("card");
+        positionCanvasMenu(clientX, clientY);
     }
 
     function isCanvasBlank(target) {
@@ -149,6 +324,18 @@
 
     function canStartCanvasPan(target) {
         return !target.closest(".canvas-menu") && !target.closest(".fixed-topbar");
+    }
+
+    function canWheelPanCanvas(target) {
+        return !target.closest(".tool-card") && !target.closest(".canvas-menu") && !target.closest(".fixed-topbar");
+    }
+
+    function normalizeWheelDelta(event) {
+        const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1;
+        return {
+            x: event.deltaX * unit,
+            y: event.deltaY * unit
+        };
     }
 
     class ToolCard {
@@ -171,6 +358,7 @@
         createElement() {
             const wrap = document.createElement("section");
             wrap.className = "tool-card";
+            wrap.__toolCard = this;
             wrap.innerHTML = `<div class="card-content"></div>`;
             wrap.addEventListener("pointerdown", (event) => {
                 if (event.button === 0) this.workspace.bringToFront(this);
@@ -198,9 +386,28 @@
         setSize(width, height) {
             const nextWidth = Number.isFinite(width) ? width : DEFAULT_CARD_WIDTH;
             const nextHeight = Number.isFinite(height) ? height : DEFAULT_CARD_HEIGHT;
+            this.element.style.minWidth = `${CARD_MIN_WIDTH}px`;
+            this.element.style.minHeight = `${CARD_MIN_HEIGHT}px`;
             this.element.style.width = `${Math.max(CARD_MIN_WIDTH, Math.round(nextWidth))}px`;
             this.element.style.height = `${Math.max(CARD_MIN_HEIGHT, Math.round(nextHeight))}px`;
             this.workspace.updateCanvasBounds();
+        }
+
+        resetToDefaultSize() {
+            if (!isDesktopPointer) return;
+            this.setSize(DEFAULT_CARD_WIDTH, DEFAULT_CARD_HEIGHT);
+        }
+
+        applyToolDefaultSize(toolId) {
+            const size = getToolDefaultSize(toolId);
+            if (!size) return false;
+            this.setSize(size.width, size.height);
+            return true;
+        }
+
+        saveCurrentSizeAsToolDefault() {
+            if (!this.toolId) return false;
+            return setToolDefaultSize(this.toolId, this.width, this.height);
         }
 
         initDrag() {
@@ -288,25 +495,23 @@
             if (!scroller) return;
 
             const heightOverflow = scroller.scrollHeight - scroller.clientHeight;
-            const widthOverflow = scroller.scrollWidth - scroller.clientWidth;
             if (allowShrink) {
                 const nextHeight = Math.max(DEFAULT_CARD_HEIGHT, this.measureScrollerContentHeight(scroller) + AUTO_FIT_PADDING);
-                const nextWidth = widthOverflow > 1 ? this.width + widthOverflow + AUTO_FIT_PADDING : this.width;
-                this.setSize(nextWidth, nextHeight);
-                if (scroller.scrollHeight - scroller.clientHeight > 1 || scroller.scrollWidth - scroller.clientWidth > 1) {
+                this.setSize(this.width, nextHeight);
+                if (scroller.scrollHeight - scroller.clientHeight > 1) {
                     this.scheduleAutoFit();
                 }
                 return;
             }
 
-            if (heightOverflow <= 1 && widthOverflow <= 1) return;
+            if (heightOverflow <= 1) return;
 
             this.setSize(
-                this.width + Math.max(0, widthOverflow) + AUTO_FIT_PADDING,
+                this.width,
                 this.height + Math.max(0, heightOverflow) + AUTO_FIT_PADDING
             );
 
-            if (scroller.scrollHeight - scroller.clientHeight > 1 || scroller.scrollWidth - scroller.clientWidth > 1) {
+            if (scroller.scrollHeight - scroller.clientHeight > 1) {
                 this.scheduleAutoFit();
             }
         }
@@ -315,7 +520,7 @@
             if (!isDesktopPointer || !scroller) return;
             this.stopAutoFit();
 
-            this.contentResizeObserver = new ResizeObserver(() => this.scheduleAutoFit());
+            this.contentResizeObserver = new ResizeObserver(() => this.scheduleAutoFit(true));
             this.contentResizeObserver.observe(scroller);
             Array.from(scroller.children).forEach((child) => this.contentResizeObserver.observe(child));
 
@@ -352,6 +557,7 @@
         }
 
         renderSelectView() {
+            this.resetToDefaultSize();
             const canClose = this.workspace.totalCards > 1;
             this.contentEl.innerHTML = `<div class="view-header">
                     <div class="glow-head"><span class="glow-head-title">选择文字工具</span></div>
@@ -395,12 +601,12 @@
             };
 
             paint();
-            this.observeAutoFit(this.contentEl.querySelector(".select-body"), true);
             searchInput.addEventListener("input", (event) => paint(event.target.value));
             grid.addEventListener("click", (event) => {
                 const button = event.target.closest(".tool-picker");
                 if (!button) return;
                 this.toolId = button.dataset.tool;
+                this.applyToolDefaultSize(this.toolId);
                 this.render();
             });
 
@@ -667,6 +873,11 @@
             suppressContextMenu = false;
             return;
         }
+        const cardElement = event.target.closest(".tool-card");
+        if (cardElement && cardElement.__toolCard && cardElement.__toolCard.toolId) {
+            showCardMenu(cardElement.__toolCard, event.clientX, event.clientY);
+            return;
+        }
         if (!isCanvasBlank(event.target)) return;
         showCanvasMenu(event.clientX, event.clientY);
     });
@@ -716,6 +927,17 @@
         cardsStage.addEventListener("pointercancel", stop);
     });
 
+    cardsStage.addEventListener("wheel", (event) => {
+        if (!isDesktopPointer || !canWheelPanCanvas(event.target)) return;
+        event.preventDefault();
+        hideCanvasMenu();
+        hideHeadTooltip();
+        setCanvasActive();
+
+        const delta = normalizeWheelDelta(event);
+        workspace.panBy(-delta.x, -delta.y);
+    }, { passive: false });
+
     window.addEventListener("resize", () => workspace.updateCanvasBounds());
     window.addEventListener("scroll", hideHeadTooltip, true);
 
@@ -744,12 +966,75 @@
         if (event.key === "Escape") {
             hideCanvasMenu();
             hideHeadTooltip();
+            closeSettingsModal();
+        }
+    });
+
+    settingsBtn.addEventListener("click", openSettings);
+    closeSettings.addEventListener("click", closeSettingsModal);
+    settingsModal.addEventListener("click", (event) => {
+        if (event.target === settingsModal) closeSettingsModal();
+    });
+    resetAllSettingsBtn.addEventListener("click", () => {
+        if (!clearAllToolDefaultSizes()) return;
+        renderCardSettings();
+        showToast("所有功能卡片默认尺寸已恢复");
+    });
+
+    cardSettingsList.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const row = button.closest(".settings-row");
+        const toolId = row && row.dataset.tool;
+        if (!toolId) return;
+
+        const widthInput = row.querySelector('[data-role="width"]');
+        const heightInput = row.querySelector('[data-role="height"]');
+        const action = button.dataset.action;
+
+        if (action === "save-tool-size") {
+            if (setToolDefaultSize(toolId, Number(widthInput.value), Number(heightInput.value))) {
+                renderCardSettings();
+                showToast("默认尺寸已保存");
+            }
+        } else if (action === "reset-tool-size") {
+            clearToolDefaultSize(toolId);
+            renderCardSettings();
+            showToast("此工具已恢复默认尺寸");
+        } else if (action === "toggle-apply-targets") {
+            row.querySelector('[data-role="apply-targets"]').classList.toggle("show");
+        } else if (action === "apply-to-selected") {
+            const size = normalizeSize(Number(widthInput.value), Number(heightInput.value));
+            const targets = Array.from(row.querySelectorAll('[data-role="apply-targets"] input:checked')).map((item) => item.value);
+            if (!targets.length) {
+                showToast("请先选择要应用的工具");
+                return;
+            }
+            targets.forEach((targetId) => setToolDefaultSize(targetId, size.width, size.height));
+            renderCardSettings();
+            showToast("已应用到选中工具");
         }
     });
 
     canvasMenu.querySelector('[data-action="add-card"]').addEventListener("click", () => {
         const point = menuPoint || getStagePoint(window.innerWidth / 2, window.innerHeight / 2);
         workspace.addCardAt(point.x, point.y);
+        hideCanvasMenu();
+    });
+
+    canvasMenu.querySelector('[data-action="save-card-default"]').addEventListener("click", () => {
+        if (!menuCard || !menuCard.toolId) return;
+        if (menuCard.saveCurrentSizeAsToolDefault()) {
+            showToast("已保存为此工具默认格式");
+        }
+        hideCanvasMenu();
+    });
+
+    canvasMenu.querySelector('[data-action="reset-card-default"]').addEventListener("click", () => {
+        if (!menuCard || !menuCard.toolId) return;
+        clearToolDefaultSize(menuCard.toolId);
+        showToast("此工具默认格式已恢复");
         hideCanvasMenu();
     });
 

@@ -32,11 +32,13 @@
 **支持的密码类型：**
 
 - 摩斯密码 📡
+- 旗语密码 🚩
 - 栅栏密码 🧱：支持直栏式分栏与 W 型轨迹，可选择展示排列和读取过程
 - 培根密码 BA
 - ROT13 🔄
 - A1Z26 🔢
 - 进制转换 🧮：HEX / DEC / OCT / BIN 程序员模式
+- 二进制/文本 💬：文本与 8 位二进制字节互转，支持 UTF-8 中文
 - 移位密码 ➡️
 - 自定义密码表 🧾
 
@@ -63,15 +65,18 @@ puzzletool/
 │   ├── text-tools.html         # 文字工具工作台
 │   ├── text-tools.css          # 文字工具工作台样式
 │   └── tools/                  # 文字工具拆分模块
+│       ├── tool-config.js      # 文字工具配置入口
 │       ├── main.js             # 卡片工作台主控
 │       ├── registry.js         # 工具注册表
 │       ├── tool-utils.js       # 公共转换与UI辅助
 │       ├── morse.js            # 摩斯密码
+│       ├── semaphore.js        # 旗语密码
 │       ├── rail-fence.js       # 栅栏密码
 │       ├── bacon.js            # 培根密码
 │       ├── rot13.js            # ROT13
 │       ├── a1z26.js            # A1Z26
-│       ├── binary.js           # 进制转换
+│       ├── radix-converter.js  # 进制转换
+│       ├── binary-text.js      # 二进制/文本转换
 │       ├── shift.js            # 移位密码
 │       ├── custom-table.js     # 自定义密码表
 │       ├── build-bundle.ps1    # bundle 构建脚本

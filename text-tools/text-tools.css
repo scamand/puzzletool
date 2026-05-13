@@ -1,5 +1,5 @@
 ﻿html,body{height:100%;overflow:hidden}
-        .fixed-shell{--tool-card-default-width:700px;--tool-card-default-height:400px;--tool-card-min-width:360px;--tool-card-min-height:260px;width:100vw;height:100vh;padding:0;overflow:hidden}
+        .fixed-shell{width:100vw;height:100vh;padding:0;overflow:hidden}
         .fixed-topbar{position:fixed;left:50%;top:10px;z-index:1200;width:min(860px,calc(100% - 24px));transform:translateX(-50%);padding:8px 16px;transition:padding .28s ease,opacity .24s ease,transform .28s ease}
         .fixed-topbar:hover,.fixed-topbar:focus-within{width:min(860px,calc(100% - 24px));padding:8px 16px;opacity:1}
         body.canvas-active .fixed-topbar:not(:hover):not(:focus-within){padding:4px 10px;opacity:.82;transform:translateX(-50%) translateY(-3px)}
@@ -54,15 +54,18 @@
         .panel-note{border:1px solid color-mix(in srgb,var(--primary) 32%,transparent);background:color-mix(in srgb,var(--primary-soft) 74%,transparent);color:var(--text-main);border-radius:10px;padding:10px 12px;font-size:.82rem;line-height:1.46}
         .stack{display:grid;gap:12px}
         .input-label{display:block;margin-bottom:6px;color:var(--text-sub);font-size:.82rem}
-        .text-input,.text-output{min-height:108px;resize:vertical}
+        .text-input,.text-output{min-width:0;max-width:100%;min-height:108px;resize:vertical}
         .text-output[readonly]{color:var(--text-main)}
         .rail-input{min-height:44px;max-width:140px;appearance:textfield;resize:none}
         .rail-input::-webkit-inner-spin-button,.rail-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
         .controls-row{display:flex;flex-wrap:wrap;gap:9px}
+        .inline-check{display:inline-flex;min-height:44px;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-3);color:var(--text-main);font-size:.9rem;cursor:pointer}
+        .inline-check input{width:16px;height:16px;margin:0;accent-color:var(--primary)}
         .action-btn.warn{border-color:color-mix(in srgb,var(--danger) 52%,transparent);background:var(--danger-soft);color:color-mix(in srgb,var(--danger) 76%,white 24%)}
         .tool-empty{text-align:center;color:var(--text-sub);padding:28px 10px}
         .mapping-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
         .compact-input{min-height:44px;resize:none}
+        .binary-encoding{max-width:130px}
         .morse-keypad{display:grid;grid-template-columns:minmax(190px,260px) minmax(0,1fr);gap:12px;align-items:stretch;height:168px}
         .morse-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
         .morse-key{position:relative;height:168px;border:1px solid color-mix(in srgb,var(--primary) 42%,transparent);border-radius:12px;background:color-mix(in srgb,var(--surface-3) 92%,transparent);color:var(--text-main);font-size:2.2rem;font-weight:700;line-height:1;cursor:pointer;outline:none;overflow:hidden;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background-color .16s ease}
@@ -76,6 +79,20 @@
         .morse-sequence{font-size:1.8rem;font-weight:700;letter-spacing:2px;color:var(--text-main);overflow-wrap:anywhere}
         .morse-letter{font-size:2.3rem;font-weight:800;color:color-mix(in srgb,var(--primary) 76%,white 24%)}
         .morse-muted{color:var(--text-sub);font-size:.92rem}
+        .semaphore-input{display:grid;grid-template-columns:minmax(190px,240px) minmax(0,1fr);gap:12px;align-items:stretch}
+        .semaphore-wheel{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:12px;background:var(--surface-3);overflow:hidden}
+        .semaphore-center-label{position:absolute;left:50%;top:50%;z-index:2;display:grid;width:44px;height:44px;place-items:center;border-radius:999px;background:color-mix(in srgb,var(--surface-1) 84%,transparent);color:var(--text-sub);font-size:.95rem;font-weight:900;transform:translate(-50%,-50%);pointer-events:none;transition:background-color .16s ease,color .16s ease,box-shadow .16s ease}
+        .semaphore-center-label.active{background:color-mix(in srgb,var(--primary-soft) 88%,transparent);color:var(--text-main);box-shadow:0 0 14px color-mix(in srgb,var(--primary-glow) 30%,transparent)}
+        .semaphore-ray{position:absolute;left:50%;top:50%;width:50%;height:44px;padding:0;border:0;background:transparent;color:var(--text-sub);cursor:pointer;overflow:visible;transform:translateY(-50%) rotate(var(--angle));transform-origin:0 50%;display:flex;align-items:center;justify-content:flex-end;padding-right:14px;box-sizing:border-box}
+        .semaphore-ray::before{content:"";width:calc(100% - 46px);height:9px;border-radius:999px;background:color-mix(in srgb,var(--line-strong) 72%,transparent);transition:background-color .16s ease,box-shadow .16s ease,height .16s ease}
+        .semaphore-ray:hover::before,.semaphore-ray.active::before{height:12px;background:color-mix(in srgb,var(--primary) 78%,white 22%);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 46%,transparent)}
+        .semaphore-ray.flash::before{animation:morsePulse .34s ease both}
+        .semaphore-preview{display:grid;grid-template-rows:1fr 1fr;min-height:190px;border:1px solid var(--line);border-radius:12px;background:var(--surface-3);overflow:hidden}
+        .semaphore-preview>div{display:flex;align-items:center;justify-content:center;padding:12px;text-align:center}
+        .semaphore-preview>div:first-child{border-bottom:1px solid var(--line)}
+        .semaphore-combo{font-size:1.4rem;font-weight:800;color:var(--text-main)}
+        .semaphore-letter{font-size:2.6rem;font-weight:900;color:color-mix(in srgb,var(--primary) 76%,white 24%)}
+        .semaphore-muted{color:var(--text-sub);font-size:.92rem}
         .programmer-tool{display:grid;gap:14px}
         .radix-display{display:grid;gap:7px}
         .radix-row{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center;gap:12px;min-height:46px;padding:7px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text-main);text-align:left;cursor:pointer;outline:none;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
@@ -97,8 +114,34 @@
 
         .canvas-menu{position:fixed;z-index:2200;display:none;min-width:156px;padding:6px;border:1px solid var(--line-strong);border-radius:12px;background:color-mix(in srgb,var(--surface-1) 94%,transparent);box-shadow:var(--shadow-2);backdrop-filter:blur(14px)}
         .canvas-menu.show{display:block;animation:contentFade .12s ease both}
+        .canvas-menu button[hidden]{display:none}
         .canvas-menu button{width:100%;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--text-main);text-align:left;padding:0 12px;cursor:pointer;transition:background-color .2s ease,transform .2s ease}
         .canvas-menu button:hover{background:color-mix(in srgb,var(--primary-soft) 88%,transparent);transform:translateY(-1px)}
+        .settings-modal .settings-content{width:min(920px,calc(100vw - 28px));height:min(680px,calc(100vh - 42px));display:flex;flex-direction:column;padding:18px;overflow:hidden}
+        .settings-close{border:0;background:transparent}
+        .settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:34px}
+        .settings-layout{flex:1;min-height:0;display:grid;grid-template-columns:170px minmax(0,1fr);gap:14px}
+        .settings-tabs{display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line);padding-right:12px}
+        .settings-tab{min-height:42px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text-main);text-align:left;padding:0 12px;cursor:pointer}
+        .settings-tab.active,.settings-tab:hover{border-color:color-mix(in srgb,var(--primary) 42%,transparent);background:color-mix(in srgb,var(--primary-soft) 68%,transparent)}
+        .settings-main{min-width:0;min-height:0;overflow:auto}
+        .settings-panel{display:none}
+        .settings-panel.active{display:block}
+        .settings-list{display:grid;gap:10px}
+        .settings-row{border:1px solid var(--line);border-radius:10px;background:var(--surface-3);overflow:hidden}
+        .settings-row summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:0 12px;cursor:pointer;list-style:none}
+        .settings-row summary::-webkit-details-marker{display:none}
+        .settings-row-title{font-weight:800;color:var(--text-main)}
+        .settings-row-meta{color:var(--text-sub);font-size:.82rem}
+        .settings-row-body{display:grid;gap:12px;padding:0 12px 12px}
+        .settings-number-grid{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:10px}
+        .settings-field{display:grid;gap:5px;color:var(--text-sub);font-size:.82rem}
+        .settings-field input{min-height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface-1);color:var(--text-main);padding:0 10px}
+        .settings-actions{display:flex;flex-wrap:wrap;gap:8px}
+        .apply-targets{display:none;gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:color-mix(in srgb,var(--surface-1) 70%,transparent)}
+        .apply-targets.show{display:grid}
+        .apply-targets-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+        .settings-empty{padding:24px;text-align:center;color:var(--text-sub)}
 
         .mobile-add-wrap{display:none;margin-top:10px;justify-content:center}
         .mobile-add-btn{min-height:46px;min-width:160px;border-radius:999px;border:1px solid color-mix(in srgb,var(--primary) 50%,transparent);background:color-mix(in srgb,var(--primary-soft) 82%,transparent);color:var(--text-main);cursor:pointer;transition:transform .2s ease,background-color .2s ease}
@@ -119,7 +162,11 @@
             .topbar-actions{left:8px;right:8px;top:0;justify-content:center;transform:none}
             .topbar-btn{padding:0 8px;font-size:.82rem}
             .tool-card{width:min(var(--tool-card-default-width),calc(100vw - 24px));min-width:280px}
+            .settings-layout{grid-template-columns:1fr}
+            .settings-tabs{border-right:0;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:10px}
+            .settings-number-grid{grid-template-columns:1fr}
             .mapping-grid{grid-template-columns:1fr}
+            .semaphore-input{grid-template-columns:1fr}
             .morse-keypad{grid-template-columns:1fr;height:auto}
             .morse-key{height:92px}
             .morse-live{height:132px}

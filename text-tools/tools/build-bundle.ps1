@@ -2,14 +2,17 @@ $ErrorActionPreference = "Stop"
 
 $base = Split-Path -Parent $MyInvocation.MyCommand.Path
 $order = @(
+    "tool-config.js",
     "tool-utils.js",
     "registry.js",
     "morse.js",
+    "semaphore.js",
     "rail-fence.js",
     "bacon.js",
     "rot13.js",
     "a1z26.js",
-    "binary.js",
+    "radix-converter.js",
+    "binary-text.js",
     "shift.js",
     "custom-table.js",
     "main.js"

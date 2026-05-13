@@ -35,6 +35,7 @@
             <button class="topbar-btn" id="arrangeCardsBtn" type="button">整理</button>
             <button class="topbar-btn" id="saveLayoutBtn" type="button">保存</button>
             <button class="topbar-btn" id="loadLayoutBtn" type="button">加载</button>
+            <button class="topbar-btn" id="settingsBtn" type="button">设置</button>
         </div>
     </div>
     <div class="cards-stage" id="cardsStage">
@@ -61,6 +62,27 @@
 </div>
 <div class="canvas-menu" id="canvasMenu">
     <button type="button" data-action="add-card">添加卡片</button>
+    <button type="button" data-action="save-card-default">保存为默认格式</button>
+    <button type="button" data-action="reset-card-default">恢复此工具默认</button>
+</div>
+<div class="modal settings-modal" id="settingsModal">
+    <div class="modal-content settings-content">
+        <button class="modal-close settings-close" id="closeSettings" type="button" aria-label="关闭设置">&times;</button>
+        <div class="settings-head">
+            <h2 class="modal-title">设置</h2>
+            <button class="topbar-btn warn" id="resetAllSettingsBtn" type="button">恢复默认值</button>
+        </div>
+        <div class="settings-layout">
+            <div class="settings-tabs" aria-label="设置分类">
+                <button class="settings-tab active" type="button" data-panel="cards">卡片设置</button>
+            </div>
+            <div class="settings-main">
+                <div class="settings-panel active" id="cardSettingsPanel">
+                    <div class="settings-list" id="cardSettingsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="toast" id="toast"></div>
 <script src="../theme/theme-system.js"></script>
