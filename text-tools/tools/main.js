@@ -19,6 +19,7 @@
     const closeSettings = document.getElementById("closeSettings");
     const resetAllSettingsBtn = document.getElementById("resetAllSettingsBtn");
     const cardSettingsList = document.getElementById("cardSettingsList");
+    const featureSettingsList = document.getElementById("featureSettingsList");
     const toast = document.getElementById("toast");
 
     if (
@@ -38,6 +39,7 @@
         !closeSettings ||
         !resetAllSettingsBtn ||
         !cardSettingsList ||
+        !featureSettingsList ||
         !toast
     ) {
         return;
@@ -100,6 +102,7 @@
     const AUTO_FIT_PADDING = readConfigNumber(CARD_CONFIG.autoFitPadding, "card.autoFitPadding");
     const LAYOUT_STORAGE_KEY = STORAGE_CONFIG.layout;
     const CARD_DEFAULTS_STORAGE_KEY = STORAGE_CONFIG.cardDefaults;
+    const PADDLE_OCR_TOKEN_KEY = STORAGE_CONFIG.paddleOcrToken;
     let menuPoint = null;
     let menuCard = null;
     let suppressContextMenu = false;
@@ -176,6 +179,25 @@
         return getToolDefaultSize(toolId) || { width: DEFAULT_CARD_WIDTH, height: DEFAULT_CARD_HEIGHT };
     }
 
+    function readLocalValue(key) {
+        try {
+            return window.localStorage.getItem(key) || "";
+        } catch (_) {
+            return "";
+        }
+    }
+
+    function writeLocalValue(key, value) {
+        try {
+            if (value) window.localStorage.setItem(key, value);
+            else window.localStorage.removeItem(key);
+            return true;
+        } catch (_) {
+            showToast("保存失败，浏览器可能限制了本地存储");
+            return false;
+        }
+    }
+
     function renderCardSettings() {
         if (!TOOLS.length) {
             cardSettingsList.innerHTML = '<div class="settings-empty">暂无可设置的工具。</div>';
@@ -221,8 +243,29 @@
         }).join("");
     }
 
+    function renderFeatureSettings() {
+        const token = readLocalValue(PADDLE_OCR_TOKEN_KEY);
+        featureSettingsList.innerHTML = `<details class="settings-row" open>
+            <summary>
+                <span class="settings-row-title">文字OCR</span>
+                <span class="settings-row-meta">${token ? "已保存 Token" : "未设置 Token"}</span>
+            </summary>
+            <div class="settings-row-body">
+                <label class="settings-field">
+                    <span>OCR Token</span>
+                    <input type="password" data-role="ocr-token" value="${escapeHTML(token)}" placeholder="填写自己的 Token">
+                </label>
+                <div class="settings-actions">
+                    <button class="mini-btn" type="button" data-action="save-ocr-token">保存</button>
+                    <button class="mini-btn" type="button" data-action="clear-ocr-token">清除</button>
+                </div>
+            </div>
+        </details>`;
+    }
+
     function openSettings() {
         renderCardSettings();
+        renderFeatureSettings();
         settingsModal.classList.add("show");
     }
 
@@ -975,6 +1018,15 @@
     settingsModal.addEventListener("click", (event) => {
         if (event.target === settingsModal) closeSettingsModal();
     });
+    settingsModal.querySelectorAll(".settings-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            const panel = tab.dataset.panel;
+            settingsModal.querySelectorAll(".settings-tab").forEach((item) => item.classList.toggle("active", item === tab));
+            settingsModal.querySelectorAll(".settings-panel").forEach((item) => {
+                item.classList.toggle("active", item.id === `${panel === "cards" ? "card" : "feature"}SettingsPanel`);
+            });
+        });
+    });
     resetAllSettingsBtn.addEventListener("click", () => {
         if (!clearAllToolDefaultSizes()) return;
         renderCardSettings();
@@ -1014,6 +1066,31 @@
             targets.forEach((targetId) => setToolDefaultSize(targetId, size.width, size.height));
             renderCardSettings();
             showToast("已应用到选中工具");
+        }
+    });
+
+    featureSettingsList.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const tokenInput = featureSettingsList.querySelector('[data-role="ocr-token"]');
+        if (!tokenInput) return;
+
+        if (button.dataset.action === "save-ocr-token") {
+            if (!tokenInput.value.trim()) {
+                showToast("Token 不能为空");
+                shake(tokenInput);
+                return;
+            }
+            if (writeLocalValue(PADDLE_OCR_TOKEN_KEY, tokenInput.value.trim())) {
+                renderFeatureSettings();
+                showToast("Token 已保存到本地");
+            }
+        } else if (button.dataset.action === "clear-ocr-token") {
+            if (writeLocalValue(PADDLE_OCR_TOKEN_KEY, "")) {
+                renderFeatureSettings();
+                showToast("Token 已清除");
+            }
         }
     });
 

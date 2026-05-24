@@ -33,6 +33,7 @@
 
 - 摩斯密码 📡
 - 旗语密码 🚩
+- 文字OCR 👁️：粘贴图片并用 Tesseract.js 本地识别文字
 - 栅栏密码 🧱：支持直栏式分栏与 W 型轨迹，可选择展示排列和读取过程
 - 培根密码 BA
 - ROT13 🔄
@@ -69,6 +70,7 @@ puzzletool/
 │       ├── main.js             # 卡片工作台主控
 │       ├── registry.js         # 工具注册表
 │       ├── tool-utils.js       # 公共转换与UI辅助
+│       ├── ocr.js              # 文字OCR
 │       ├── morse.js            # 摩斯密码
 │       ├── semaphore.js        # 旗语密码
 │       ├── rail-fence.js       # 栅栏密码

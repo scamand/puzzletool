@@ -5,6 +5,7 @@ $order = @(
     "tool-config.js",
     "tool-utils.js",
     "registry.js",
+    "ocr.js",
     "morse.js",
     "semaphore.js",
     "rail-fence.js",
