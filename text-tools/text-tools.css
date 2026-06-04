@@ -90,10 +90,19 @@
         .semaphore-wheel{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:12px;background:var(--surface-3);overflow:hidden}
         .semaphore-center-label{position:absolute;left:50%;top:50%;z-index:2;display:grid;width:44px;height:44px;place-items:center;border-radius:999px;background:color-mix(in srgb,var(--surface-1) 84%,transparent);color:var(--text-sub);font-size:.95rem;font-weight:900;transform:translate(-50%,-50%);pointer-events:none;transition:background-color .16s ease,color .16s ease,box-shadow .16s ease}
         .semaphore-center-label.active{background:color-mix(in srgb,var(--primary-soft) 88%,transparent);color:var(--text-main);box-shadow:0 0 14px color-mix(in srgb,var(--primary-glow) 30%,transparent)}
-        .semaphore-ray{position:absolute;left:50%;top:50%;width:50%;height:44px;padding:0;border:0;background:transparent;color:var(--text-sub);cursor:pointer;overflow:visible;transform:translateY(-50%) rotate(var(--angle));transform-origin:0 50%;display:flex;align-items:center;justify-content:flex-end;padding-right:14px;box-sizing:border-box}
-        .semaphore-ray::before{content:"";width:calc(100% - 46px);height:9px;border-radius:999px;background:color-mix(in srgb,var(--line-strong) 72%,transparent);transition:background-color .16s ease,box-shadow .16s ease,height .16s ease}
-        .semaphore-ray:hover::before,.semaphore-ray.active::before{height:12px;background:color-mix(in srgb,var(--primary) 78%,white 22%);box-shadow:0 0 18px color-mix(in srgb,var(--primary-glow) 46%,transparent)}
-        .semaphore-ray.flash::before{animation:morsePulse .34s ease both}
+        .semaphore-pointer{position:absolute;left:50%;top:50%;width:50%;height:44px;padding:0;border:0;background:transparent;cursor:grab;overflow:visible;transform:translateY(-50%) rotate(var(--angle));transform-origin:0 50%;transition:transform .05s linear}
+        .semaphore-pointer.dragging{cursor:grabbing;transition:none}
+        .semaphore-pointer.snapping{transition:transform .32s cubic-bezier(0.34,1.56,0.64,1)}
+        .semaphore-pointer::before{content:"";position:absolute;left:32px;right:14px;top:50%;height:9px;border-radius:999px;transform:translateY(-50%);transition:height .16s ease,box-shadow .16s ease}
+        .semaphore-pointer.long::before{background:color-mix(in srgb,var(--primary) 78%,white 22%);box-shadow:0 0 10px color-mix(in srgb,var(--primary-glow) 38%,transparent)}
+        .semaphore-pointer.short::before{background:color-mix(in srgb,var(--danger) 72%,white 28%);box-shadow:0 0 10px color-mix(in srgb,var(--danger) 50%,transparent)}
+        .semaphore-pointer.dragging::before,.semaphore-pointer.snapping::before{height:12px}
+        .semaphore-pointer.long.dragging::before,.semaphore-pointer.long.snapping::before{box-shadow:0 0 22px color-mix(in srgb,var(--primary-glow) 58%,transparent)}
+        .semaphore-pointer.short.dragging::before,.semaphore-pointer.short.snapping::before{box-shadow:0 0 22px color-mix(in srgb,var(--danger) 68%,transparent)}
+        .semaphore-ray{position:absolute;left:50%;top:50%;width:50%;height:44px;padding:0;border:0;background:transparent;overflow:visible;transform:translateY(-50%) rotate(var(--angle));transform-origin:0 50%;pointer-events:none}
+        .semaphore-ray::before{content:"";position:absolute;left:32px;right:14px;top:50%;height:16px;border-radius:999px;transform:translateY(-50%);opacity:0;transition:opacity .16s ease,box-shadow .16s ease,height .16s ease}
+        .semaphore-ray.active::before{opacity:1;background:color-mix(in srgb,var(--primary) 50%,white 30%);filter:blur(6px);height:20px}
+        .semaphore-ray.overlap::before{background:color-mix(in srgb,var(--primary) 35%,var(--danger) 35%,white 30%);opacity:.9}
         .semaphore-preview{display:grid;grid-template-rows:1fr 1fr;min-height:190px;border:1px solid var(--line);border-radius:12px;background:var(--surface-3);overflow:hidden}
         .semaphore-preview>div{display:flex;align-items:center;justify-content:center;padding:12px;text-align:center}
         .semaphore-preview>div:first-child{border-bottom:1px solid var(--line)}

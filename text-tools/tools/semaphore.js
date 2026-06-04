@@ -43,20 +43,60 @@
         Object.entries(LETTER_PAIRS).map(([letter, pair]) => [pair.slice().sort((a, b) => a - b).join("-"), letter])
     );
 
+    function normAngle(a) {
+        return ((a % 360) + 360) % 360;
+    }
+
+    function snapAngle(angle) {
+        return Math.round(angle / 45) * 45;
+    }
+
+    function angleToKey(angle) {
+        const a = normAngle(angle);
+        const dir = DIRECTIONS.find(d => normAngle(d.angle) === a);
+        return dir ? dir.key : null;
+    }
+
+    function keyToAngle(key) {
+        const dir = DIRECTIONS.find(d => d.key === key);
+        return dir ? dir.angle : null;
+    }
+
+    // 两角度间最小差距（考虑跨越0°）
+    function angleDiff(a, b) {
+        const d = Math.abs(normAngle(a) - normAngle(b));
+        return Math.min(d, 360 - d);
+    }
+
+    // 最近的方向索引
+    function nearestDirIndex(angle) {
+        let minDiff = Infinity, idx = 0;
+        DIRECTIONS.forEach((d, i) => {
+            const diff = angleDiff(angle, d.angle);
+            if (diff < minDiff) { minDiff = diff; idx = i; }
+        });
+        return idx;
+    }
+
     function mountSemaphore(container, helpers, options = {}) {
         const headerActions = options.headerActions || null;
         if (headerActions) {
-            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="点亮两根方向线组成旗语字母。方向按小键盘位置输入：从右上开始顺时针为 9 6 3 2 1 4 7 8，Delete 清空输出。">❓</button>`;
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="拖动两根指针组成旗语字母。长针(蓝)优先。Delete 清空输出。">❓</button>`;
         }
 
-        let selected = [];
         let outputValue = "";
         let cleanupKeyboard = null;
+        let angles = [135, 180];
+        let dragged = [false, false];
+        let dragging = null;
+        let snapping = [false, false];
 
         container.innerHTML = `<div class="stack">
             <div class="semaphore-input">
                 <div class="semaphore-wheel" aria-label="旗语方向选择">
-                    ${DIRECTIONS.map((direction) => `<button class="semaphore-ray" type="button" data-key="${direction.key}" style="--angle:${direction.angle}deg" title="${direction.key} ${direction.label}" aria-label="${direction.key} ${direction.label}"></button>`).join("")}
+                    ${DIRECTIONS.map((d) => `<button class="semaphore-ray" type="button" data-key="${d.key}" style="--angle:${d.angle}deg" title="${d.key} ${d.label}" aria-label="${d.key} ${d.label}"></button>`).join("")}
+                    <div class="semaphore-pointer long" data-index="0" data-role="pointer"></div>
+                    <div class="semaphore-pointer short" data-index="1" data-role="pointer"></div>
                     <div class="semaphore-center-label" data-role="center-label">-</div>
                 </div>
                 <div class="semaphore-preview">
@@ -67,75 +107,142 @@
             <textarea class="text-output" data-role="output" readonly placeholder="按 Enter 将有效字母写入这里"></textarea>
         </div>`;
 
+        const pointers = Array.from(container.querySelectorAll(".semaphore-pointer"));
         const rays = Array.from(container.querySelectorAll(".semaphore-ray"));
         const comboEl = container.querySelector('[data-role="combo"]');
         const letterEl = container.querySelector('[data-role="letter"]');
         const centerLabel = container.querySelector('[data-role="center-label"]');
         const output = container.querySelector('[data-role="output"]');
+        const wheel = container.querySelector(".semaphore-wheel");
 
         function currentLetter() {
-            if (selected.length !== 2) return "";
-            return PAIR_TO_LETTER[selected.slice().sort((a, b) => a - b).join("-")] || "";
+            const keys = angles.map(angleToKey);
+            if (keys.some(k => !k)) return "";
+            return PAIR_TO_LETTER[keys.slice().sort().join("-")] || "";
         }
 
-        function flash(ray) {
-            ray.classList.remove("flash");
-            void ray.offsetWidth;
-            ray.classList.add("flash");
+        function selectedKeys() {
+            return angles.map(angleToKey).filter(Boolean);
+        }
+
+        function renderPointer(ptr, i) {
+            ptr.style.setProperty('--angle', angles[i] + 'deg');
         }
 
         function render() {
+            pointers.forEach((ptr, i) => renderPointer(ptr, i));
+            const keys = selectedKeys();
             const letter = currentLetter();
-            rays.forEach((ray) => {
-                ray.classList.toggle("active", selected.includes(ray.dataset.key));
-            });
-            comboEl.textContent = selected.length ? selected.join(" + ") : "等待输入";
-            comboEl.classList.toggle("semaphore-muted", selected.length === 0);
-            letterEl.textContent = letter || (selected.length === 2 ? "?" : "-");
+            comboEl.textContent = keys.length === 2 ? keys.join(' + ') : "等待输入";
+            comboEl.classList.toggle("semaphore-muted", keys.length !== 2);
+            letterEl.textContent = letter || (keys.length === 2 ? "?" : "-");
             letterEl.classList.toggle("semaphore-muted", !letter);
             output.value = outputValue;
         }
 
-        function toggleDirection(key) {
-            if (!/^[1-9]$/.test(key) || key === "5") return;
+        // 更新8个方向目标光晕
+        function updateTargetGlow(angle, ptrIdx) {
+            const snapped = snapAngle(angle);
+            rays.forEach(ray => {
+                const rayAngle = parseFloat(ray.style.getPropertyValue('--angle'));
+                const isTarget = normAngle(rayAngle) === normAngle(snapped);
+                const otherAngle = angles[1 - ptrIdx];
+                const otherSnapped = normAngle(snapAngle(otherAngle));
+                const isOther = normAngle(rayAngle) === otherSnapped;
+                ray.classList.toggle("active", isTarget);
+                ray.classList.toggle("overlap", isTarget && isOther);
+            });
+        }
 
-            const index = selected.indexOf(key);
-            if (index >= 0) {
-                selected.splice(index, 1);
-            } else {
-                selected.push(key);
-            }
+        function clearTargetGlow() {
+            rays.forEach(ray => {
+                ray.classList.remove("active", "overlap");
+            });
+        }
 
-            const ray = rays.find((item) => item.dataset.key === key);
-            if (ray) flash(ray);
-            render();
+        function animateSnap(index, targetAngle) {
+            if (snapping[index]) return;
+            snapping[index] = true;
+            const ptr = pointers[index];
+            ptr.classList.add("snapping");
+            angles[index] = targetAngle;
+            ptr.style.setProperty('--angle', targetAngle + 'deg');
+            setTimeout(() => {
+                ptr.classList.remove("snapping");
+                snapping[index] = false;
+                render();
+            }, 320);
+        }
+
+        function startDrag(e, index) {
+            if (snapping.some(s => s)) return;
+            e.preventDefault();
+            dragging = index;
+            dragged[index] = true;
+            pointers[index].classList.add("dragging");
+            wheel.setPointerCapture(e.pointerId);
+        }
+
+        function moveDrag(e) {
+            if (dragging === null) return;
+            const rect = wheel.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const rawAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+            angles[dragging] = rawAngle;
+            pointers[dragging].style.setProperty('--angle', rawAngle + 'deg');
+            updateTargetGlow(rawAngle, dragging);
+        }
+
+        function endDrag(e) {
+            if (dragging === null) return;
+            const ptr = pointers[dragging];
+            ptr.classList.remove("dragging");
+            const snapped = snapAngle(angles[dragging]);
+            clearTargetGlow();
+            animateSnap(dragging, snapped);
+            dragging = null;
+        }
+
+        pointers.forEach((ptr, i) => {
+            ptr.addEventListener("pointerdown", e => startDrag(e, i));
+        });
+
+        wheel.addEventListener("pointermove", moveDrag);
+        wheel.addEventListener("pointerup", endDrag);
+        wheel.addEventListener("pointercancel", endDrag);
+
+        function snapPointerToKey(index, key) {
+            const angle = keyToAngle(key);
+            if (angle === null) return;
+            dragged[index] = true;
+            animateSnap(index, angle);
+        }
+
+        function handleKeyPress(key) {
+            if (snapping.some(s => s)) return;
+            if (key === "5") return;
+            let idx = dragged[1] ? 1 : 0;
+            if (dragged[0] && !dragged[1]) idx = 1;
+            else if (dragged[1] && !dragged[0]) idx = 0;
+            snapPointerToKey(idx, key);
         }
 
         function commit() {
             const letter = currentLetter();
             if (!letter) return;
             outputValue += letter;
-            selected = [];
+            angles = [135, 180];
+            dragged = [false, false];
             render();
         }
 
         function clearOutput() {
             outputValue = "";
-            selected = [];
+            angles = [135, 180];
+            dragged = [false, false];
             render();
         }
-
-        rays.forEach((ray) => {
-            ray.addEventListener("click", () => toggleDirection(ray.dataset.key));
-            ray.addEventListener("pointerenter", () => {
-                centerLabel.textContent = ray.dataset.key;
-                centerLabel.classList.add("active");
-            });
-            ray.addEventListener("pointerleave", () => {
-                centerLabel.textContent = "-";
-                centerLabel.classList.remove("active");
-            });
-        });
 
         const onKeyDown = (event) => {
             const card = container.closest(".tool-card");
@@ -144,7 +251,7 @@
 
             if (/^[1-9]$/.test(event.key) && event.key !== "5") {
                 event.preventDefault();
-                toggleDirection(event.key);
+                handleKeyPress(event.key);
             } else if (event.key === "Enter") {
                 event.preventDefault();
                 commit();
