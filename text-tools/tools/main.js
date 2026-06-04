@@ -1,6 +1,9 @@
 (() => {
     if (typeof window.initThemeManager === "function") {
-        window.initThemeManager({ allowToggle: false });
+        window.initThemeManager({
+            allowToggle: true,
+            toggleSelector: "#themeToggle"
+        });
     }
 
     const helpBtn = document.getElementById("helpBtn");

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            var key = "theme_manual_override";
+            var theme = null;
+            try {
+                var saved = window.localStorage.getItem(key);
+                if (saved === "light" || saved === "dark") theme = saved;
+            } catch (_) {}
+            if (!theme) {
+                var hour = new Date().getHours();
+                theme = (hour >= 19 || hour < 7) ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="../things/puzzle.svg">
+    <title>图片工具</title>
+    <link rel="stylesheet" href="../theme/light-theme.css">
+    <link rel="stylesheet" href="../theme/dark-theme.css">
+    <link rel="stylesheet" href="../theme/common-styles.css">
+    <link rel="stylesheet" href="./image-tools.css">
+</head>
+<body class="image-tool-page">
+<button class="theme-toggle" id="themeToggle" title="切换主题" aria-label="切换主题" aria-pressed="false">
+    <span class="theme-toggle-slider"></span>
+</button>
+
+<div class="image-topbar">
+    <a href="../index.html" class="back-link">← 返回工具箱</a>
+    <h1 class="main-title"><span class="title-wrap">图片工具<span class="help-icon" id="imageHelpBtn" title="查看帮助">🤔</span></span></h1>
+</div>
+
+<main class="image-stage" id="imageStage" tabindex="0" aria-label="图片画布">
+    <div class="image-layer" id="imageLayer"></div>
+    <div class="image-selection" id="imageSelection" hidden>
+        <span class="image-resize-handle image-handle-nw" data-handle="nw"></span>
+        <span class="image-resize-handle image-handle-n" data-handle="n"></span>
+        <span class="image-resize-handle image-handle-ne" data-handle="ne"></span>
+        <span class="image-resize-handle image-handle-e" data-handle="e"></span>
+        <span class="image-resize-handle image-handle-se" data-handle="se"></span>
+        <span class="image-resize-handle image-handle-s" data-handle="s"></span>
+        <span class="image-resize-handle image-handle-sw" data-handle="sw"></span>
+        <span class="image-resize-handle image-handle-w" data-handle="w"></span>
+    </div>
+</main>
+
+<div class="image-context-menu" id="imageContextMenu">
+    <button type="button" data-action="open-color">改变颜色</button>
+</div>
+
+<aside class="image-color-panel" id="imageColorPanel" aria-label="改变颜色" hidden>
+    <div class="image-panel-head">
+        <strong>改变颜色</strong>
+        <button class="image-panel-close" id="imageColorPanelClose" type="button" aria-label="关闭">&times;</button>
+    </div>
+
+    <details class="image-panel-section" data-section="opacity">
+        <summary>改变透明度</summary>
+        <div class="image-panel-body">
+            <label class="image-control-field">
+                <span>透明度</span>
+                <input class="image-number-input" type="number" min="0" max="100" step="1" data-control="opacity-number">
+            </label>
+            <label class="image-control-field image-slider-field">
+                <span>0%-100%</span>
+                <input type="range" min="0" max="100" step="1" data-control="opacity-range">
+            </label>
+        </div>
+    </details>
+
+    <details class="image-panel-section" data-section="saturation">
+        <summary>改变饱和度</summary>
+        <div class="image-panel-body">
+            <label class="image-control-field">
+                <span>饱和度</span>
+                <input class="image-number-input" type="number" min="0" max="200" step="1" data-control="saturation-number">
+            </label>
+            <label class="image-control-field image-slider-field">
+                <span>0%-200%</span>
+                <input type="range" min="0" max="200" step="1" data-control="saturation-range">
+            </label>
+        </div>
+    </details>
+
+    <details class="image-panel-section" data-section="brightness">
+        <summary>改变亮度</summary>
+        <div class="image-panel-body">
+            <label class="image-control-field">
+                <span>亮度</span>
+                <input class="image-number-input" type="number" min="0" max="200" step="1" data-control="brightness-number">
+            </label>
+            <label class="image-control-field image-slider-field">
+                <span>0%-200%</span>
+                <input type="range" min="0" max="200" step="1" data-control="brightness-range">
+            </label>
+        </div>
+    </details>
+
+    <details class="image-panel-section" data-section="binary">
+        <summary>二值图像</summary>
+        <div class="image-panel-body image-binary-body">
+            <label class="image-control-field">
+                <span>阈值</span>
+                <input class="image-number-input" type="number" min="0" max="255" step="1" data-control="threshold-number">
+            </label>
+            <label class="image-control-field image-slider-field">
+                <span>0-255</span>
+                <input type="range" min="0" max="255" step="1" data-control="threshold-range">
+            </label>
+            <button class="image-action-btn" type="button" data-action="generate-binary">生成</button>
+            <button class="image-action-btn image-ghost-btn" type="button" data-action="restore-original">恢复原图</button>
+        </div>
+    </details>
+</aside>
+
+<div class="modal" id="imageHelpModal">
+    <div class="modal-content">
+        <span class="modal-close" id="imageHelpClose">&times;</span>
+        <h2 class="modal-title">使用说明</h2>
+        <div class="modal-body">
+            <p>1. 在页面任意位置按 Ctrl+V 粘贴剪切板图片。</p>
+            <p>2. 点击图片选中，拖动图片可移动，拖动边缘可拉伸，拖动四角可等比缩放。</p>
+            <p>3. 右键选中图片可打开颜色调整面板。</p>
+            <p>4. Ctrl+C 可复制当前选中图片，Ctrl+Z / Ctrl+Y 可撤销或前进。</p>
+            <p>5. 操作画布后顶部标题会收起，悬停标题区域会展开。</p>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../theme/theme-system.js"></script>
+<script src="../theme/cache-client.js" defer></script>
+<script src="./js/state.js"></script>
+<script src="./js/history.js"></script>
+<script src="./js/color/binary.js"></script>
+<script src="./js/interactions/clipboard.js"></script>
+<script src="./js/interactions/select-move-resize.js"></script>
+<script src="./js/interactions/context-menu.js"></script>
+<script src="./js/color/filter-controls.js"></script>
+<script src="./js/color/color-panel.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
