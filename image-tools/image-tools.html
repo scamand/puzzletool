@@ -37,10 +37,12 @@
 
 <main class="image-stage" id="imageStage" tabindex="0" aria-label="图片画布">
     <div class="image-layer" id="imageLayer"></div>
+    <div class="image-marquee" id="imageMarquee" hidden></div>
     <div class="image-selection" id="imageSelection" hidden>
         <span class="image-resize-handle image-handle-nw" data-handle="nw"></span>
         <span class="image-resize-handle image-handle-n" data-handle="n"></span>
         <span class="image-resize-handle image-handle-ne" data-handle="ne"></span>
+        <span class="image-rotate-handle" data-handle="rotate" title="旋转"></span>
         <span class="image-resize-handle image-handle-e" data-handle="e"></span>
         <span class="image-resize-handle image-handle-se" data-handle="se"></span>
         <span class="image-resize-handle image-handle-s" data-handle="s"></span>
@@ -51,6 +53,31 @@
 
 <div class="image-context-menu" id="imageContextMenu">
     <button type="button" data-action="open-color">改变颜色</button>
+</div>
+
+<div class="image-canvas-menu" id="imageCanvasMenu">
+    <button class="image-canvas-action" type="button" data-action="open-move-mode">移动模式</button>
+    <div class="image-move-mode-panel" id="imageMoveModePanel" hidden>
+        <div class="image-menu-title">移动模式</div>
+        <label class="image-menu-option">
+            <input type="radio" name="imageMoveMode" value="free" data-setting="movement-mode">
+            <span>自由模式</span>
+        </label>
+        <label class="image-menu-option">
+            <input type="radio" name="imageMoveMode" value="grid" data-setting="movement-mode">
+            <span>网格模式</span>
+        </label>
+        <div class="image-grid-settings" id="imageGridSettings">
+            <label class="image-menu-field">
+                <span>网格大小</span>
+                <input type="number" min="2" max="400" step="1" data-setting="grid-size">
+            </label>
+            <label class="image-menu-field">
+                <span>旋转角度</span>
+                <input type="number" min="1" max="180" step="1" data-setting="rotation-step">
+            </label>
+        </div>
+    </div>
 </div>
 
 <aside class="image-color-panel" id="imageColorPanel" aria-label="改变颜色" hidden>
@@ -124,10 +151,13 @@
         <h2 class="modal-title">使用说明</h2>
         <div class="modal-body">
             <p>1. 在页面任意位置按 Ctrl+V 粘贴剪切板图片。</p>
-            <p>2. 点击图片选中，拖动图片可移动，拖动边缘可拉伸，拖动四角可等比缩放。</p>
-            <p>3. 右键选中图片可打开颜色调整面板。</p>
-            <p>4. Ctrl+C 可复制当前选中图片，Ctrl+Z / Ctrl+Y 可撤销或前进。</p>
-            <p>5. 操作画布后顶部标题会收起，悬停标题区域会展开。</p>
+            <p>2. 点击图片选中，Ctrl/Shift 点击可多选，空白处左键拖动可框选。</p>
+            <p>3. 拖动图片可移动，拖动边缘可拉伸，拖动四角可等比缩放。</p>
+            <p>4. 拖动图片正上方的旋转按钮，可旋转单张图片或整体旋转多选图片。</p>
+            <p>5. 空白处右键选择移动模式，可切换自由模式和网格模式，网格模式按页面网格线吸附移动、缩放和旋转。</p>
+            <p>6. 右键选中图片可打开颜色调整面板，Delete 可删除当前选中图片。</p>
+            <p>7. Ctrl+C 可复制当前选中图片，Ctrl+Z / Ctrl+Y 可撤销或前进。</p>
+            <p>8. 操作画布后顶部标题会收起，悬停标题区域会展开。</p>
         </div>
     </div>
 </div>

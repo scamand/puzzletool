@@ -30,6 +30,44 @@
         });
     }
 
+    async function calculateVisualOrigin(src) {
+        try {
+            const image = await loadDrawableImage(src);
+            const naturalWidth = Math.max(1, image.naturalWidth || image.width);
+            const naturalHeight = Math.max(1, image.naturalHeight || image.height);
+            const scale = Math.min(1, 512 / naturalWidth, 512 / naturalHeight);
+            const width = Math.max(1, Math.round(naturalWidth * scale));
+            const height = Math.max(1, Math.round(naturalHeight * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+            context.drawImage(image, 0, 0, width, height);
+
+            const data = context.getImageData(0, 0, width, height).data;
+            let total = 0;
+            let sumX = 0;
+            let sumY = 0;
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha < 8) continue;
+                    total += alpha;
+                    sumX += (x + .5) * alpha;
+                    sumY += (y + .5) * alpha;
+                }
+            }
+
+            if (!total) return { originX: 50, originY: 50 };
+            return {
+                originX: Math.max(0, Math.min(100, sumX / total / width * 100)),
+                originY: Math.max(0, Math.min(100, sumY / total / height * 100))
+            };
+        } catch (_) {
+            return { originX: 50, originY: 50 };
+        }
+    }
+
     function cloneItemForSnapshot(item) {
         return {
             id: item.id,
@@ -44,6 +82,9 @@
             y: item.y,
             width: item.width,
             height: item.height,
+            rotation: item.rotation || 0,
+            originX: Number.isFinite(item.originX) ? item.originX : 50,
+            originY: Number.isFinite(item.originY) ? item.originY : 50,
             opacity: item.opacity,
             saturation: item.saturation,
             brightness: item.brightness,
@@ -51,17 +92,180 @@
         };
     }
 
+    function getItemOriginPoint(item) {
+        const originX = Number.isFinite(item.originX) ? item.originX : 50;
+        const originY = Number.isFinite(item.originY) ? item.originY : 50;
+        return {
+            x: item.x + item.width * originX / 100,
+            y: item.y + item.height * originY / 100
+        };
+    }
+
+    function getItemVisualBounds(item) {
+        const angle = (item.rotation || 0) * Math.PI / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const origin = getItemOriginPoint(item);
+        const corners = [
+            [item.x, item.y],
+            [item.x + item.width, item.y],
+            [item.x + item.width, item.y + item.height],
+            [item.x, item.y + item.height]
+        ].map(function (point) {
+            const dx = point[0] - origin.x;
+            const dy = point[1] - origin.y;
+            return {
+                x: origin.x + dx * cos - dy * sin,
+                y: origin.y + dx * sin + dy * cos
+            };
+        });
+        const xs = corners.map(function (point) { return point.x; });
+        const ys = corners.map(function (point) { return point.y; });
+        return {
+            left: Math.min.apply(null, xs),
+            top: Math.min.apply(null, ys),
+            right: Math.max.apply(null, xs),
+            bottom: Math.max.apply(null, ys)
+        };
+    }
+
+    function getItemsBounds(items) {
+        if (!items.length) return null;
+        const bounds = items.map(getItemVisualBounds);
+        return {
+            left: Math.min.apply(null, bounds.map(function (item) { return item.left; })),
+            top: Math.min.apply(null, bounds.map(function (item) { return item.top; })),
+            right: Math.max.apply(null, bounds.map(function (item) { return item.right; })),
+            bottom: Math.max.apply(null, bounds.map(function (item) { return item.bottom; }))
+        };
+    }
+
+    function rectsIntersect(a, b) {
+        return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
+    }
+
     function createApi(els) {
         let toastTimer = 0;
         let binaryRequestId = 0;
         let historyTimer = 0;
+        let lastPointer = null;
 
         const api = {
             els: els,
             minSize: store.MIN_SIZE,
             clamp: store.clamp,
             getItem: store.getItem,
+            getAllItems: function () {
+                return store.state.items.slice();
+            },
             getSelectedItem: store.getSelectedItem,
+            getSelectedItems: store.getSelectedItems,
+            getItemVisualBounds: getItemVisualBounds,
+            getItemsBounds: getItemsBounds,
+            rectsIntersect: rectsIntersect,
+
+            setPointerPosition: function (x, y) {
+                lastPointer = { x: x, y: y };
+            },
+
+            snapMoveDelta: function (dx, dy) {
+                if (store.state.movementMode !== "grid") {
+                    return { x: dx, y: dy };
+                }
+                const size = Math.max(1, Number(store.state.gridSize) || 1);
+                return {
+                    x: Math.round(dx / size) * size,
+                    y: Math.round(dy / size) * size
+                };
+            },
+
+            isGridMode: function () {
+                return store.state.movementMode === "grid";
+            },
+
+            snapToGrid: function (value) {
+                if (store.state.movementMode !== "grid") return value;
+                const size = Math.max(1, Number(store.state.gridSize) || 1);
+                return Math.round(value / size) * size;
+            },
+
+            snapMoveForSelection: function (itemStarts, dx, dy, startBounds) {
+                if (store.state.movementMode !== "grid") {
+                    return { x: dx, y: dy };
+                }
+
+                if (itemStarts.length <= 1) {
+                    const entry = itemStarts[0];
+                    return {
+                        x: api.snapToGrid(entry.x + dx) - entry.x,
+                        y: api.snapToGrid(entry.y + dy) - entry.y
+                    };
+                }
+
+                return {
+                    x: api.snapToGrid(startBounds.left + dx) - startBounds.left,
+                    y: api.snapToGrid(startBounds.top + dy) - startBounds.top
+                };
+            },
+
+            snapResizeBox: function (start, next, handle, keepAspect) {
+                if (store.state.movementMode !== "grid") return next;
+
+                const minSize = api.minSize;
+                const grid = api.snapToGrid;
+                const startRight = start.x + start.width;
+                const startBottom = start.y + start.height;
+                const aspect = start.width / Math.max(1, start.height);
+                const snapped = {
+                    x: next.x,
+                    y: next.y,
+                    width: next.width,
+                    height: next.height
+                };
+
+                if (!keepAspect) {
+                    if (handle.indexOf("e") !== -1) {
+                        snapped.width = Math.max(minSize, grid(next.x + next.width) - next.x);
+                    }
+                    if (handle.indexOf("s") !== -1) {
+                        snapped.height = Math.max(minSize, grid(next.y + next.height) - next.y);
+                    }
+                    if (handle.indexOf("w") !== -1) {
+                        const left = Math.min(startRight - minSize, grid(next.x));
+                        snapped.x = left;
+                        snapped.width = Math.max(minSize, startRight - left);
+                    }
+                    if (handle.indexOf("n") !== -1) {
+                        const top = Math.min(startBottom - minSize, grid(next.y));
+                        snapped.y = top;
+                        snapped.height = Math.max(minSize, startBottom - top);
+                    }
+                    return snapped;
+                }
+
+                const fixedX = handle.indexOf("w") !== -1 ? startRight : start.x;
+                const fixedY = handle.indexOf("n") !== -1 ? startBottom : start.y;
+                const draggedX = handle.indexOf("w") !== -1 ? grid(next.x) : grid(next.x + next.width);
+                const draggedY = handle.indexOf("n") !== -1 ? grid(next.y) : grid(next.y + next.height);
+                const widthCandidate = Math.max(minSize, Math.abs(draggedX - fixedX));
+                const heightCandidate = Math.max(minSize, Math.abs(draggedY - fixedY));
+                const useHeight = Math.abs(heightCandidate - start.height) / Math.max(1, start.height) >
+                    Math.abs(widthCandidate - start.width) / Math.max(1, start.width);
+                const width = useHeight ? Math.max(minSize, heightCandidate * aspect) : widthCandidate;
+                const height = useHeight ? heightCandidate : Math.max(minSize, width / aspect);
+
+                snapped.width = Math.round(width);
+                snapped.height = Math.round(height);
+                snapped.x = handle.indexOf("w") !== -1 ? startRight - snapped.width : start.x;
+                snapped.y = handle.indexOf("n") !== -1 ? startBottom - snapped.height : start.y;
+                return snapped;
+            },
+
+            snapRotation: function (angle) {
+                if (store.state.movementMode !== "grid") return angle;
+                const step = Math.max(1, Number(store.state.rotationStep) || 1);
+                return Math.round(angle / step) * step;
+            },
 
             showToast: function (message) {
                 window.clearTimeout(toastTimer);
@@ -102,6 +306,7 @@
                 const src = URL.createObjectURL(file);
                 try {
                     const info = await loadImageInfo(src);
+                    const visualOrigin = await calculateVisualOrigin(src);
                     const item = store.createItem({
                         src: src,
                         naturalWidth: info.naturalWidth,
@@ -109,8 +314,14 @@
                         x: 0,
                         y: 0
                     });
-                    item.x = Math.round((window.innerWidth - item.width) / 2);
-                    item.y = Math.round((window.innerHeight - item.height) / 2);
+                    item.originX = visualOrigin.originX;
+                    item.originY = visualOrigin.originY;
+                    const pastePoint = lastPointer || {
+                        x: window.innerWidth / 2,
+                        y: window.innerHeight / 2
+                    };
+                    item.x = Math.round(pastePoint.x - item.width / 2);
+                    item.y = Math.round(pastePoint.y - item.height / 2);
                     api.keepItemInReach(item);
                     api.mountItem(item);
                     api.selectItem(item.id);
@@ -148,6 +359,10 @@
                 item.node.style.width = item.width + "px";
                 item.node.style.height = item.height + "px";
                 item.node.style.zIndex = item.z;
+                const originX = Number.isFinite(item.originX) ? item.originX : 50;
+                const originY = Number.isFinite(item.originY) ? item.originY : 50;
+                item.node.style.transformOrigin = originX + "% " + originY + "%";
+                item.node.style.transform = "rotate(" + (item.rotation || 0) + "deg)";
             },
 
             applyItemImageSource: function (item) {
@@ -163,13 +378,17 @@
             },
 
             selectItem: function (id, options) {
+                return api.selectItems(id ? [id] : [], options);
+            },
+
+            selectItems: function (ids, options) {
                 const opts = options || {};
-                const selected = opts.preserveZ
-                    ? (store.state.selectedId = id || null, store.getSelectedItem())
-                    : store.selectItem(id);
+                const selected = store.selectItems(ids, opts);
                 store.state.items.forEach(function (item) {
                     if (!item.node) return;
-                    item.node.classList.toggle("selected", item.id === store.state.selectedId);
+                    const isSelected = store.state.selectedIds.includes(item.id);
+                    item.node.classList.toggle("selected", isSelected);
+                    item.node.classList.toggle("multi-selected", isSelected && store.state.selectedIds.length > 1);
                     item.node.style.zIndex = item.z;
                 });
                 api.updateSelection();
@@ -181,10 +400,19 @@
                 }
             },
 
+            toggleSelectedItem: function (id) {
+                store.toggleSelectedItem(id);
+                api.selectItems(store.state.selectedIds, { preserveZ: true });
+            },
+
             createSnapshot: function () {
                 return {
                     items: store.state.items.map(cloneItemForSnapshot),
                     selectedId: store.state.selectedId,
+                    selectedIds: store.state.selectedIds.slice(),
+                    movementMode: store.state.movementMode,
+                    gridSize: store.state.gridSize,
+                    rotationStep: store.state.rotationStep,
                     nextId: store.state.nextId,
                     nextZ: store.state.nextZ
                 };
@@ -196,6 +424,12 @@
                 store.state.nextId = snapshot.nextId || 1;
                 store.state.nextZ = snapshot.nextZ || 20;
                 store.state.selectedId = snapshot.selectedId || null;
+                store.state.selectedIds = Array.isArray(snapshot.selectedIds)
+                    ? snapshot.selectedIds.slice()
+                    : (snapshot.selectedId ? [snapshot.selectedId] : []);
+                store.state.movementMode = snapshot.movementMode === "grid" ? "grid" : "free";
+                store.state.gridSize = Number.isFinite(snapshot.gridSize) ? snapshot.gridSize : 32;
+                store.state.rotationStep = Number.isFinite(snapshot.rotationStep) ? snapshot.rotationStep : 15;
 
                 snapshot.items.forEach(function (data) {
                     const item = Object.assign({}, data, {
@@ -208,23 +442,69 @@
 
                 if (!store.getSelectedItem()) {
                     store.state.selectedId = null;
+                    store.state.selectedIds = [];
                 }
-                api.selectItem(store.state.selectedId, { preserveZ: true });
+                api.selectItems(store.state.selectedIds, { preserveZ: true });
+                api.syncCanvasMenu();
+            },
+
+            removeSelectedItem: function () {
+                const selectedItems = store.getSelectedItems();
+                if (!selectedItems.length) {
+                    api.showToast("请先选中图片");
+                    return;
+                }
+
+                const selectedIds = new Set(selectedItems.map(function (item) { return item.id; }));
+                selectedItems.forEach(function (item) {
+                    if (item.node) item.node.remove();
+                });
+                store.state.items = store.state.items.filter(function (item) {
+                    return !selectedIds.has(item.id);
+                });
+                store.state.selectedId = null;
+                store.state.selectedIds = [];
+                api.hideContextMenu();
+                api.hideColorPanel();
+                api.updateSelection();
+                api.commitHistory();
+                api.showToast(selectedItems.length > 1 ? "已删除选中图片" : "已删除图片");
             },
 
             updateSelection: function () {
-                const item = store.getSelectedItem();
-                if (!item) {
+                const selectedItems = store.getSelectedItems();
+                if (!selectedItems.length) {
                     els.selection.hidden = true;
                     return;
                 }
 
                 els.selection.hidden = false;
+                els.selection.classList.toggle("group-selection", selectedItems.length > 1);
+
+                if (selectedItems.length > 1) {
+                    const bounds = getItemsBounds(selectedItems);
+                    els.selection.style.left = Math.round(bounds.left) + "px";
+                    els.selection.style.top = Math.round(bounds.top) + "px";
+                    els.selection.style.width = Math.round(bounds.right - bounds.left) + "px";
+                    els.selection.style.height = Math.round(bounds.bottom - bounds.top) + "px";
+                    els.selection.style.zIndex = Math.max.apply(null, selectedItems.map(function (item) { return item.z; })) + 1;
+                    els.selection.style.setProperty("--image-origin-x", "50%");
+                    els.selection.style.setProperty("--image-origin-y", "50%");
+                    els.selection.style.transform = "none";
+                    return;
+                }
+
+                const item = selectedItems[0];
                 els.selection.style.left = item.x + "px";
                 els.selection.style.top = item.y + "px";
                 els.selection.style.width = item.width + "px";
                 els.selection.style.height = item.height + "px";
                 els.selection.style.zIndex = item.z + 1;
+                const originX = Number.isFinite(item.originX) ? item.originX : 50;
+                const originY = Number.isFinite(item.originY) ? item.originY : 50;
+                els.selection.style.setProperty("--image-origin-x", originX + "%");
+                els.selection.style.setProperty("--image-origin-y", originY + "%");
+                els.selection.style.transform = "rotate(" + (item.rotation || 0) + "deg)";
             },
 
             showContextMenu: function (x, y) {
@@ -237,6 +517,67 @@
 
             hideContextMenu: function () {
                 els.contextMenu.classList.remove("show");
+            },
+
+            showCanvasMenu: function (x, y) {
+                if (els.moveModePanel) {
+                    els.moveModePanel.hidden = true;
+                }
+                api.syncCanvasMenu();
+                els.canvasMenu.classList.add("show");
+                const rect = els.canvasMenu.getBoundingClientRect();
+                els.canvasMenu.style.left = store.clamp(x, 8, window.innerWidth - rect.width - 8) + "px";
+                els.canvasMenu.style.top = store.clamp(y, 8, window.innerHeight - rect.height - 8) + "px";
+            },
+
+            hideCanvasMenu: function () {
+                els.canvasMenu.classList.remove("show");
+                if (els.moveModePanel) {
+                    els.moveModePanel.hidden = true;
+                }
+            },
+
+            showMoveModePanel: function () {
+                if (!els.moveModePanel) return;
+                els.moveModePanel.hidden = false;
+                api.syncCanvasMenu();
+                const rect = els.canvasMenu.getBoundingClientRect();
+                const left = store.clamp(rect.left, 8, window.innerWidth - rect.width - 8);
+                const top = store.clamp(rect.top, 8, window.innerHeight - rect.height - 8);
+                els.canvasMenu.style.left = left + "px";
+                els.canvasMenu.style.top = top + "px";
+            },
+
+            syncCanvasMenu: function () {
+                if (!els.canvasMenu) return;
+                els.canvasMenu.querySelectorAll('[data-setting="movement-mode"]').forEach(function (input) {
+                    input.checked = input.value === store.state.movementMode;
+                });
+                const gridInput = els.canvasMenu.querySelector('[data-setting="grid-size"]');
+                const rotationInput = els.canvasMenu.querySelector('[data-setting="rotation-step"]');
+                if (gridInput) gridInput.value = store.state.gridSize;
+                if (rotationInput) rotationInput.value = store.state.rotationStep;
+                if (els.gridSettings) {
+                    els.gridSettings.classList.toggle("show", store.state.movementMode === "grid");
+                }
+            },
+
+            setMovementMode: function (mode) {
+                store.state.movementMode = mode === "grid" ? "grid" : "free";
+                api.syncCanvasMenu();
+                api.commitHistory();
+                api.showToast(store.state.movementMode === "grid" ? "已切换到网格模式" : "已切换到自由模式");
+            },
+
+            setGridSettings: function (settings) {
+                if (Number.isFinite(settings.gridSize)) {
+                    store.state.gridSize = Math.round(store.clamp(settings.gridSize, 2, 400));
+                }
+                if (Number.isFinite(settings.rotationStep)) {
+                    store.state.rotationStep = Math.round(store.clamp(settings.rotationStep, 1, 180));
+                }
+                api.syncCanvasMenu();
+                api.commitHistory();
             },
 
             showColorPanel: function () {
@@ -284,14 +625,41 @@
 
                 try {
                     const image = await loadDrawableImage(item.src);
+                    const angle = (item.rotation || 0) * Math.PI / 180;
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    const width = Math.max(1, Math.round(item.width));
+                    const height = Math.max(1, Math.round(item.height));
+                    const originX = width * (Number.isFinite(item.originX) ? item.originX : 50) / 100;
+                    const originY = height * (Number.isFinite(item.originY) ? item.originY : 50) / 100;
+                    const corners = [
+                        [0, 0],
+                        [width, 0],
+                        [width, height],
+                        [0, height]
+                    ].map(function (point) {
+                        const dx = point[0] - originX;
+                        const dy = point[1] - originY;
+                        return {
+                            x: originX + dx * cos - dy * sin,
+                            y: originY + dx * sin + dy * cos
+                        };
+                    });
+                    const minX = Math.min.apply(null, corners.map(function (point) { return point.x; }));
+                    const minY = Math.min.apply(null, corners.map(function (point) { return point.y; }));
+                    const maxX = Math.max.apply(null, corners.map(function (point) { return point.x; }));
+                    const maxY = Math.max.apply(null, corners.map(function (point) { return point.y; }));
                     const canvas = document.createElement("canvas");
-                    canvas.width = Math.max(1, Math.round(item.width));
-                    canvas.height = Math.max(1, Math.round(item.height));
+                    canvas.width = Math.max(1, Math.ceil(maxX - minX));
+                    canvas.height = Math.max(1, Math.ceil(maxY - minY));
                     const context = canvas.getContext("2d");
                     context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.translate(-minX, -minY);
+                    context.translate(originX, originY);
+                    context.rotate(angle);
                     context.globalAlpha = item.opacity / 100;
                     context.filter = "saturate(" + item.saturation + "%) brightness(" + item.brightness + "%)";
-                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    context.drawImage(image, -originX, -originY, width, height);
 
                     const blob = await new Promise(function (resolve) {
                         canvas.toBlob(resolve, "image/png");
@@ -335,8 +703,12 @@
         return {
             stage: document.getElementById("imageStage"),
             layer: document.getElementById("imageLayer"),
+            marquee: document.getElementById("imageMarquee"),
             selection: document.getElementById("imageSelection"),
             contextMenu: document.getElementById("imageContextMenu"),
+            canvasMenu: document.getElementById("imageCanvasMenu"),
+            moveModePanel: document.getElementById("imageMoveModePanel"),
+            gridSettings: document.getElementById("imageGridSettings"),
             colorPanel: document.getElementById("imageColorPanel"),
             colorPanelClose: document.getElementById("imageColorPanelClose"),
             helpBtn: document.getElementById("imageHelpBtn"),
@@ -372,12 +744,22 @@
         window.ImageContextMenu.init(api);
         window.ImageColorPanel.init(api);
         window.ImageHistory.init(api);
+        api.syncCanvasMenu();
+
+        api.els.stage.addEventListener("pointermove", function (event) {
+            api.setPointerPosition(event.clientX, event.clientY);
+        });
+        api.els.stage.addEventListener("pointerdown", function (event) {
+            api.setPointerPosition(event.clientX, event.clientY);
+        });
 
         window.addEventListener("resize", function () {
-            const item = api.getSelectedItem();
-            if (item) {
-                api.keepItemInReach(item);
-                api.renderItem(item);
+            const selectedItems = api.getSelectedItems();
+            if (selectedItems.length) {
+                selectedItems.forEach(function (item) {
+                    api.keepItemInReach(item);
+                    api.renderItem(item);
+                });
                 api.updateSelection();
                 api.updateColorPanelPosition();
             }
@@ -392,6 +774,13 @@
         document.addEventListener("keydown", function (event) {
             if (event.key === "Escape") {
                 api.els.helpModal.classList.remove("show");
+            }
+            const target = event.target;
+            const isEditing = target && target.closest && target.closest("input, textarea, select, [contenteditable='true']");
+            if ((event.key === "Delete" || event.key === "Del") && !isEditing) {
+                event.preventDefault();
+                api.markCanvasActive();
+                api.removeSelectedItem();
             }
         });
     }

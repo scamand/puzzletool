@@ -802,34 +802,18 @@
         return dir ? dir.angle : null;
     }
 
-    // 两角度间最小差距（考虑跨越0°）
-    function angleDiff(a, b) {
-        const d = Math.abs(normAngle(a) - normAngle(b));
-        return Math.min(d, 360 - d);
-    }
-
-    // 最近的方向索引
-    function nearestDirIndex(angle) {
-        let minDiff = Infinity, idx = 0;
-        DIRECTIONS.forEach((d, i) => {
-            const diff = angleDiff(angle, d.angle);
-            if (diff < minDiff) { minDiff = diff; idx = i; }
-        });
-        return idx;
-    }
-
     function mountSemaphore(container, helpers, options = {}) {
         const headerActions = options.headerActions || null;
         if (headerActions) {
-            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="拖动两根指针组成旗语字母。长针(蓝)优先。Delete 清空输出。">❓</button>`;
+            headerActions.innerHTML = `<button class="head-help" type="button" data-tip="拖动两根指针组成旗语字母。长针(蓝)优先。Backspace 删除上一字母，Delete 清空输出。">❓</button>`;
         }
 
         let outputValue = "";
         let cleanupKeyboard = null;
         let angles = [135, 180];
-        let dragged = [false, false];
         let dragging = null;
         let snapping = [false, false];
+        let keyboardTarget = 0;
 
         container.innerHTML = `<div class="stack">
             <div class="semaphore-input">
@@ -880,7 +864,6 @@
             output.value = outputValue;
         }
 
-        // 更新8个方向目标光晕
         function updateTargetGlow(angle, ptrIdx) {
             const snapped = snapAngle(angle);
             rays.forEach(ray => {
@@ -901,7 +884,6 @@
         }
 
         function animateSnap(index, targetAngle) {
-            if (snapping[index]) return;
             snapping[index] = true;
             const ptr = pointers[index];
             ptr.classList.add("snapping");
@@ -918,9 +900,10 @@
             if (snapping.some(s => s)) return;
             e.preventDefault();
             dragging = index;
-            dragged[index] = true;
             pointers[index].classList.add("dragging");
-            wheel.setPointerCapture(e.pointerId);
+            document.addEventListener("pointermove", moveDrag);
+            document.addEventListener("pointerup", endDrag);
+            document.addEventListener("pointercancel", endDrag);
         }
 
         function moveDrag(e) {
@@ -929,9 +912,17 @@
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
             const rawAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
-            angles[dragging] = rawAngle;
-            pointers[dragging].style.setProperty('--angle', rawAngle + 'deg');
-            updateTargetGlow(rawAngle, dragging);
+            const prev = angles[dragging];
+            let delta = rawAngle - prev;
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+            angles[dragging] = prev + delta;
+            pointers[dragging].style.setProperty('--angle', angles[dragging] + 'deg');
+            updateTargetGlow(angles[dragging], dragging);
+            const snapped = snapAngle(angles[dragging]);
+            const key = angleToKey(snapped);
+            centerLabel.textContent = key || "-";
+            centerLabel.classList.add("active");
         }
 
         function endDrag(e) {
@@ -940,31 +931,30 @@
             ptr.classList.remove("dragging");
             const snapped = snapAngle(angles[dragging]);
             clearTargetGlow();
+            centerLabel.textContent = "-";
+            centerLabel.classList.remove("active");
             animateSnap(dragging, snapped);
             dragging = null;
+            document.removeEventListener("pointermove", moveDrag);
+            document.removeEventListener("pointerup", endDrag);
+            document.removeEventListener("pointercancel", endDrag);
         }
 
         pointers.forEach((ptr, i) => {
             ptr.addEventListener("pointerdown", e => startDrag(e, i));
         });
 
-        wheel.addEventListener("pointermove", moveDrag);
-        wheel.addEventListener("pointerup", endDrag);
-        wheel.addEventListener("pointercancel", endDrag);
-
         function snapPointerToKey(index, key) {
             const angle = keyToAngle(key);
             if (angle === null) return;
-            dragged[index] = true;
             animateSnap(index, angle);
         }
 
         function handleKeyPress(key) {
-            if (snapping.some(s => s)) return;
             if (key === "5") return;
-            let idx = dragged[1] ? 1 : 0;
-            if (dragged[0] && !dragged[1]) idx = 1;
-            else if (dragged[1] && !dragged[0]) idx = 0;
+            // 立即转动，不受动画阻塞
+            const idx = keyboardTarget;
+            keyboardTarget = 1 - keyboardTarget;
             snapPointerToKey(idx, key);
         }
 
@@ -972,15 +962,19 @@
             const letter = currentLetter();
             if (!letter) return;
             outputValue += letter;
-            angles = [135, 180];
-            dragged = [false, false];
+            render();
+        }
+
+        function backspace() {
+            if (!outputValue) return;
+            outputValue = outputValue.slice(0, -1);
             render();
         }
 
         function clearOutput() {
             outputValue = "";
             angles = [135, 180];
-            dragged = [false, false];
+            keyboardTarget = 0;
             render();
         }
 
@@ -998,6 +992,9 @@
             } else if (event.key === "Delete") {
                 event.preventDefault();
                 clearOutput();
+            } else if (event.key === "Backspace") {
+                event.preventDefault();
+                backspace();
             }
         };
 

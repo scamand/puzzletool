@@ -94,11 +94,11 @@
         .semaphore-pointer.dragging{cursor:grabbing;transition:none}
         .semaphore-pointer.snapping{transition:transform .32s cubic-bezier(0.34,1.56,0.64,1)}
         .semaphore-pointer::before{content:"";position:absolute;left:32px;right:14px;top:50%;height:9px;border-radius:999px;transform:translateY(-50%);transition:height .16s ease,box-shadow .16s ease}
-        .semaphore-pointer.long::before{background:color-mix(in srgb,var(--primary) 78%,white 22%);box-shadow:0 0 10px color-mix(in srgb,var(--primary-glow) 38%,transparent)}
-        .semaphore-pointer.short::before{background:color-mix(in srgb,var(--danger) 72%,white 28%);box-shadow:0 0 10px color-mix(in srgb,var(--danger) 50%,transparent)}
+        .semaphore-pointer.long::before{background:color-mix(in srgb,var(--primary) 78%,white 22%);box-shadow:0 0 10px var(--primary-glow)}
+        .semaphore-pointer.short::before{background:color-mix(in srgb,var(--danger) 72%,white 28%);box-shadow:0 0 10px var(--danger)}
         .semaphore-pointer.dragging::before,.semaphore-pointer.snapping::before{height:12px}
-        .semaphore-pointer.long.dragging::before,.semaphore-pointer.long.snapping::before{box-shadow:0 0 22px color-mix(in srgb,var(--primary-glow) 58%,transparent)}
-        .semaphore-pointer.short.dragging::before,.semaphore-pointer.short.snapping::before{box-shadow:0 0 22px color-mix(in srgb,var(--danger) 68%,transparent)}
+        .semaphore-pointer.long.dragging::before,.semaphore-pointer.long.snapping::before{box-shadow:0 0 22px var(--primary-glow)}
+        .semaphore-pointer.short.dragging::before,.semaphore-pointer.short.snapping::before{box-shadow:0 0 22px var(--danger)}
         .semaphore-ray{position:absolute;left:50%;top:50%;width:50%;height:44px;padding:0;border:0;background:transparent;overflow:visible;transform:translateY(-50%) rotate(var(--angle));transform-origin:0 50%;pointer-events:none}
         .semaphore-ray::before{content:"";position:absolute;left:32px;right:14px;top:50%;height:16px;border-radius:999px;transform:translateY(-50%);opacity:0;transition:opacity .16s ease,box-shadow .16s ease,height .16s ease}
         .semaphore-ray.active::before{opacity:1;background:color-mix(in srgb,var(--primary) 50%,white 30%);filter:blur(6px);height:20px}

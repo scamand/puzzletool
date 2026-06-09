@@ -18,7 +18,7 @@ body {
     min-height: 58px;
     transform: translateX(-50%);
     transition: opacity .24s ease, transform .28s ease;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 .image-topbar .back-link {
@@ -102,6 +102,15 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
     inset: 0;
 }
 
+.image-marquee {
+    position: absolute;
+    z-index: 1250;
+    border: 1px solid color-mix(in srgb, var(--primary) 80%, white 20%);
+    background: color-mix(in srgb, var(--primary-soft) 68%, transparent);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--primary-glow) 24%, transparent);
+    pointer-events: none;
+}
+
 .image-node {
     position: absolute;
     display: block;
@@ -116,6 +125,11 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
 
 .image-node.selected {
     cursor: grab;
+}
+
+.image-node.multi-selected img {
+    outline: 1px solid color-mix(in srgb, var(--primary) 62%, white 20%);
+    outline-offset: 2px;
 }
 
 .image-node:active {
@@ -142,6 +156,16 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
         0 0 0 1px color-mix(in srgb, var(--surface-1) 82%, transparent),
         0 0 20px color-mix(in srgb, var(--primary-glow) 38%, transparent);
     pointer-events: none;
+    transform-origin: var(--image-origin-x, 50%) var(--image-origin-y, 50%);
+}
+
+.image-selection.group-selection {
+    border-style: dashed;
+    transform-origin: 50% 50%;
+}
+
+.image-selection.group-selection .image-resize-handle {
+    display: none;
 }
 
 .image-resize-handle {
@@ -160,6 +184,46 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
     content: "";
     position: absolute;
     inset: -14px;
+}
+
+.image-rotate-handle {
+    position: absolute;
+    left: 50%;
+    top: -46px;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, var(--primary) 82%, white 18%);
+    border-radius: 50%;
+    background: var(--surface-1);
+    color: color-mix(in srgb, var(--primary) 76%, white 24%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .24);
+    pointer-events: auto;
+    transform: translateX(-50%);
+    cursor: grab;
+}
+
+.image-rotate-handle::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 1px;
+    height: 16px;
+    background: color-mix(in srgb, var(--primary) 72%, transparent);
+    transform: translateX(-50%);
+}
+
+.image-rotate-handle::after {
+    content: "↻";
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.image-rotate-handle:active {
+    cursor: grabbing;
 }
 
 .image-handle-nw {
@@ -218,7 +282,8 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
     cursor: ew-resize;
 }
 
-.image-context-menu {
+.image-context-menu,
+.image-canvas-menu {
     position: fixed;
     z-index: 2200;
     display: none;
@@ -232,7 +297,12 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
     -webkit-backdrop-filter: blur(18px) saturate(1.25);
 }
 
-.image-context-menu.show {
+.image-canvas-menu {
+    min-width: 210px;
+}
+
+.image-context-menu.show,
+.image-canvas-menu.show {
     display: block;
     animation: imagePanelEnter .12s ease both;
 }
@@ -259,6 +329,100 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
 .image-context-menu button:hover {
     transform: translateY(-1px);
     background: color-mix(in srgb, var(--primary-soft) 82%, transparent);
+}
+
+.image-canvas-action {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-main);
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color .16s ease, transform .16s ease;
+}
+
+.image-canvas-action:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--primary-soft) 82%, transparent);
+}
+
+.image-move-mode-panel[hidden] {
+    display: none;
+}
+
+.image-move-mode-panel {
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+    padding-top: 4px;
+}
+
+.image-menu-title {
+    padding: 7px 10px 5px;
+    color: var(--text-sub);
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.image-menu-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.image-menu-option:hover {
+    background: color-mix(in srgb, var(--primary-soft) 82%, transparent);
+}
+
+.image-menu-option input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--primary);
+}
+
+.image-grid-settings {
+    display: none;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-top: 1px solid var(--line);
+}
+
+.image-grid-settings.show {
+    display: grid;
+}
+
+.image-menu-field {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    color: var(--text-sub);
+    font-size: .8rem;
+}
+
+.image-menu-field input {
+    width: 100%;
+    min-height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-3);
+    color: var(--text-main);
+    padding: 0 9px;
+    outline: none;
+}
+
+.image-menu-field input:focus {
+    border-color: color-mix(in srgb, var(--primary) 72%, white 28%);
+    box-shadow: var(--focus-ring);
 }
 
 .image-color-panel {

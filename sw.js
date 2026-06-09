@@ -1,4 +1,4 @@
-const CACHE_VERSION = "puzzletool-v4";
+const CACHE_VERSION = "puzzletool-v7";
 const APP_CACHE = `${CACHE_VERSION}-app`;
 
 const PRECACHE_URLS = [

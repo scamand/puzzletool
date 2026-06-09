@@ -6,6 +6,10 @@
     const state = {
         items: [],
         selectedId: null,
+        selectedIds: [],
+        movementMode: "free",
+        gridSize: 32,
+        rotationStep: 15,
         nextId: 1,
         nextZ: 20
     };
@@ -39,6 +43,9 @@
             y: Math.round(options.y || 0),
             width: size.width,
             height: size.height,
+            rotation: 0,
+            originX: 50,
+            originY: 50,
             opacity: 100,
             saturation: 100,
             brightness: 100,
@@ -60,13 +67,43 @@
         return state.selectedId ? getItem(state.selectedId) : null;
     }
 
-    function selectItem(id) {
-        state.selectedId = id || null;
-        const item = getSelectedItem();
-        if (item) {
-            item.z = state.nextZ++;
+    function getSelectedItems() {
+        return state.selectedIds
+            .map(getItem)
+            .filter(Boolean);
+    }
+
+    function normalizeSelection(ids) {
+        const seen = new Set();
+        return ids.filter(function (id) {
+            if (!id || seen.has(id) || !getItem(id)) return false;
+            seen.add(id);
+            return true;
+        });
+    }
+
+    function selectItems(ids, options) {
+        const opts = options || {};
+        state.selectedIds = normalizeSelection(Array.isArray(ids) ? ids : []);
+        state.selectedId = state.selectedIds.length ? state.selectedIds[state.selectedIds.length - 1] : null;
+        if (!opts.preserveZ && state.selectedIds.length) {
+            getSelectedItems().forEach(function (item) {
+                item.z = state.nextZ++;
+            });
         }
-        return item;
+        return getSelectedItem();
+    }
+
+    function selectItem(id, options) {
+        return selectItems(id ? [id] : [], options);
+    }
+
+    function toggleSelectedItem(id) {
+        if (!id || !getItem(id)) return getSelectedItem();
+        const next = state.selectedIds.includes(id)
+            ? state.selectedIds.filter(function (selectedId) { return selectedId !== id; })
+            : state.selectedIds.concat(id);
+        return selectItems(next);
     }
 
     function keepInReach(item, viewportWidth, viewportHeight) {
@@ -82,7 +119,10 @@
         createItem: createItem,
         getItem: getItem,
         getSelectedItem: getSelectedItem,
+        getSelectedItems: getSelectedItems,
         selectItem: selectItem,
+        selectItems: selectItems,
+        toggleSelectedItem: toggleSelectedItem,
         keepInReach: keepInReach
     };
 })();
