@@ -164,6 +164,9 @@
             getItemsBounds: getItemsBounds,
             rectsIntersect: rectsIntersect,
 
+            showGeometryPanel: function () {},
+            hideGeometryPanel: function () {},
+
             setPointerPosition: function (x, y) {
                 lastPointer = { x: x, y: y };
             },
@@ -267,6 +270,12 @@
                 return Math.round(angle / step) * step;
             },
 
+            snapAbsoluteRotation: function (angle) {
+                if (store.state.movementMode !== "grid") return angle;
+                const step = Math.max(1, Number(store.state.rotationStep) || 1);
+                return Math.round(angle / step) * step;
+            },
+
             showToast: function (message) {
                 window.clearTimeout(toastTimer);
                 els.toast.textContent = message;
@@ -320,8 +329,8 @@
                         x: window.innerWidth / 2,
                         y: window.innerHeight / 2
                     };
-                    item.x = Math.round(pastePoint.x - item.width / 2);
-                    item.y = Math.round(pastePoint.y - item.height / 2);
+                    item.x = Math.round(api.snapToGrid(pastePoint.x - item.width / 2));
+                    item.y = Math.round(api.snapToGrid(pastePoint.y - item.height / 2));
                     api.keepItemInReach(item);
                     api.mountItem(item);
                     api.selectItem(item.id);
@@ -394,9 +403,9 @@
                 api.updateSelection();
                 if (!selected) {
                     api.hideColorPanel();
+                    api.hideGeometryPanel();
                 } else {
                     window.ImageFilterControls.syncAll(api);
-                    api.updateColorPanelPosition();
                 }
             },
 
@@ -466,6 +475,7 @@
                 store.state.selectedIds = [];
                 api.hideContextMenu();
                 api.hideColorPanel();
+                api.hideGeometryPanel();
                 api.updateSelection();
                 api.commitHistory();
                 api.showToast(selectedItems.length > 1 ? "已删除选中图片" : "已删除图片");
@@ -482,6 +492,7 @@
                 els.selection.classList.toggle("group-selection", selectedItems.length > 1);
 
                 if (selectedItems.length > 1) {
+                    api.hideGeometryPanel();
                     const bounds = getItemsBounds(selectedItems);
                     els.selection.style.left = Math.round(bounds.left) + "px";
                     els.selection.style.top = Math.round(bounds.top) + "px";
@@ -505,6 +516,10 @@
                 els.selection.style.setProperty("--image-origin-x", originX + "%");
                 els.selection.style.setProperty("--image-origin-y", originY + "%");
                 els.selection.style.transform = "rotate(" + (item.rotation || 0) + "deg)";
+                if (window.ImageGeometryPanel) {
+                    window.ImageGeometryPanel.sync(api);
+                }
+                api.updateFollowPanelsPosition();
             },
 
             showContextMenu: function (x, y) {
@@ -582,6 +597,7 @@
 
             showColorPanel: function () {
                 if (!store.getSelectedItem()) return;
+                api.hideGeometryPanel();
                 els.colorPanel.hidden = false;
                 window.ImageFilterControls.syncAll(api);
                 api.updateColorPanelPosition();
@@ -591,11 +607,10 @@
                 els.colorPanel.hidden = true;
             },
 
-            updateColorPanelPosition: function () {
+            updateFollowPanelPosition: function (panel) {
                 const item = store.getSelectedItem();
-                if (!item || els.colorPanel.hidden) return;
+                if (!item || !panel || panel.hidden) return;
 
-                const panel = els.colorPanel;
                 const panelWidth = panel.offsetWidth || 320;
                 const panelHeight = panel.offsetHeight || 360;
                 let left = item.x + item.width + 14;
@@ -610,6 +625,19 @@
 
                 panel.style.left = Math.round(left) + "px";
                 panel.style.top = Math.round(top) + "px";
+            },
+
+            updateColorPanelPosition: function () {
+                api.updateFollowPanelPosition(els.colorPanel);
+            },
+
+            updateGeometryPanelPosition: function () {
+                api.updateFollowPanelPosition(els.geometryPanel);
+            },
+
+            updateFollowPanelsPosition: function () {
+                api.updateColorPanelPosition();
+                api.updateGeometryPanelPosition();
             },
 
             copySelectedImage: async function () {
@@ -709,6 +737,8 @@
             canvasMenu: document.getElementById("imageCanvasMenu"),
             moveModePanel: document.getElementById("imageMoveModePanel"),
             gridSettings: document.getElementById("imageGridSettings"),
+            geometryPanel: document.getElementById("imageGeometryPanel"),
+            geometryPanelClose: document.getElementById("imageGeometryPanelClose"),
             colorPanel: document.getElementById("imageColorPanel"),
             colorPanelClose: document.getElementById("imageColorPanelClose"),
             helpBtn: document.getElementById("imageHelpBtn"),
@@ -742,6 +772,7 @@
         window.ImageClipboard.init(api);
         window.ImageSelectMoveResize.init(api);
         window.ImageContextMenu.init(api);
+        window.ImageGeometryPanel.init(api);
         window.ImageColorPanel.init(api);
         window.ImageHistory.init(api);
         api.syncCanvasMenu();
@@ -761,7 +792,7 @@
                     api.renderItem(item);
                 });
                 api.updateSelection();
-                api.updateColorPanelPosition();
+                api.updateFollowPanelsPosition();
             }
         });
 

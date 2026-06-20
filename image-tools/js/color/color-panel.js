@@ -16,6 +16,16 @@
         const input = api.els.colorPanel.querySelector('[data-control="' + controlName + '"]');
         if (!input) return;
 
+        input.inputMode = "numeric";
+        input.pattern = "-?[0-9]*";
+
+        function sanitize() {
+            const sanitized = input.value.replace(/[^\d-]/g, "");
+            if (input.value !== sanitized) {
+                input.value = sanitized;
+            }
+        }
+
         function apply() {
             const liveBinary = field === "binaryThreshold";
             window.ImageFilterControls.applyField(api, field, input.value, {
@@ -25,6 +35,10 @@
         }
 
         input.addEventListener("keydown", function (event) {
+            if (event.key === "." || event.key === "," || event.key === "e" || event.key === "E" || event.key === "+") {
+                event.preventDefault();
+                return;
+            }
             if (event.key === "Enter") {
                 event.preventDefault();
                 apply();
@@ -32,6 +46,7 @@
             }
         });
 
+        input.addEventListener("input", sanitize);
         input.addEventListener("blur", apply);
     }
 

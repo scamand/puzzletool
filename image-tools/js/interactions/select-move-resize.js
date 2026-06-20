@@ -25,6 +25,64 @@
         };
     }
 
+    function getOriginLocal(box) {
+        return {
+            x: box.width * (Number.isFinite(box.originX) ? box.originX : 50) / 100,
+            y: box.height * (Number.isFinite(box.originY) ? box.originY : 50) / 100
+        };
+    }
+
+    function getAnchorLocal(handle, box) {
+        const origin = getOriginLocal(box);
+
+        if (handle.indexOf("e") !== -1 && handle.indexOf("n") === -1 && handle.indexOf("s") === -1) {
+            return { x: 0, y: origin.y };
+        }
+        if (handle.indexOf("w") !== -1 && handle.indexOf("n") === -1 && handle.indexOf("s") === -1) {
+            return { x: box.width, y: origin.y };
+        }
+        if (handle.indexOf("s") !== -1 && handle.indexOf("e") === -1 && handle.indexOf("w") === -1) {
+            return { x: origin.x, y: 0 };
+        }
+        if (handle.indexOf("n") !== -1 && handle.indexOf("e") === -1 && handle.indexOf("w") === -1) {
+            return { x: origin.x, y: box.height };
+        }
+
+        return {
+            x: handle.indexOf("w") !== -1 ? box.width : 0,
+            y: handle.indexOf("n") !== -1 ? box.height : 0
+        };
+    }
+
+    function localPointToWorld(box, point) {
+        const origin = getOriginLocal(box);
+        const angle = (box.rotation || 0) * Math.PI / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const dx = point.x - origin.x;
+        const dy = point.y - origin.y;
+
+        return {
+            x: box.x + origin.x + dx * cos - dy * sin,
+            y: box.y + origin.y + dx * sin + dy * cos
+        };
+    }
+
+    function positionBoxFromWorldAnchor(box, handle, anchorWorld) {
+        const origin = getOriginLocal(box);
+        const anchor = getAnchorLocal(handle, box);
+        const angle = (box.rotation || 0) * Math.PI / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const dx = anchor.x - origin.x;
+        const dy = anchor.y - origin.y;
+
+        return {
+            x: anchorWorld.x - origin.x - (dx * cos - dy * sin),
+            y: anchorWorld.y - origin.y - (dx * sin + dy * cos)
+        };
+    }
+
     function normalizeRotation(value) {
         const normalized = value % 360;
         return normalized < 0 ? normalized + 360 : normalized;
@@ -198,7 +256,6 @@
                 api.renderItem(entry.item);
             });
             api.updateSelection();
-            api.updateColorPanelPosition();
         });
 
         api.els.layer.addEventListener("pointerup", function (event) {
@@ -263,16 +320,24 @@
                     y: item.y,
                     width: item.width,
                     height: item.height,
-                    rotation: item.rotation || 0
+                    rotation: item.rotation || 0,
+                    originX: Number.isFinite(item.originX) ? item.originX : 50,
+                    originY: Number.isFinite(item.originY) ? item.originY : 50
                 },
                 moved: false
             };
+            activeResize.anchorWorld = localPointToWorld(
+                activeResize.itemStart,
+                getAnchorLocal(handle, activeResize.itemStart)
+            );
         });
 
         api.els.selection.addEventListener("pointermove", function (event) {
             if (activeRotate && activeRotate.pointerId === event.pointerId) {
                 const nextAngle = Math.atan2(event.clientY - activeRotate.center.y, event.clientX - activeRotate.center.x) * 180 / Math.PI;
-                const delta = api.snapRotation(nextAngle - activeRotate.startAngle);
+                const rawDelta = nextAngle - activeRotate.startAngle;
+                const primaryRotation = api.snapAbsoluteRotation(activeRotate.startRotation + rawDelta);
+                const delta = primaryRotation - activeRotate.startRotation;
                 if (Math.abs(delta) > 0) {
                     activeRotate.moved = true;
                 }
@@ -290,7 +355,6 @@
                     api.renderItem(entry.item);
                 });
                 api.updateSelection();
-                api.updateColorPanelPosition();
                 return;
             }
 
@@ -313,15 +377,27 @@
                 activeResize.handle,
                 cornerHandles.has(activeResize.handle)
             );
+            const anchoredPosition = positionBoxFromWorldAnchor(
+                {
+                    x: snappedNext.x,
+                    y: snappedNext.y,
+                    width: snappedNext.width,
+                    height: snappedNext.height,
+                    rotation: activeResize.itemStart.rotation,
+                    originX: activeResize.itemStart.originX,
+                    originY: activeResize.itemStart.originY
+                },
+                activeResize.handle,
+                activeResize.anchorWorld
+            );
 
-            activeResize.item.x = snappedNext.x;
-            activeResize.item.y = snappedNext.y;
+            activeResize.item.x = Math.round(anchoredPosition.x);
+            activeResize.item.y = Math.round(anchoredPosition.y);
             activeResize.item.width = snappedNext.width;
             activeResize.item.height = snappedNext.height;
             api.keepItemInReach(activeResize.item);
             api.renderItem(activeResize.item);
             api.updateSelection();
-            api.updateColorPanelPosition();
         });
 
         api.els.selection.addEventListener("pointerup", function (event) {
@@ -345,13 +421,14 @@
         });
 
         api.els.stage.addEventListener("pointerdown", function (event) {
-            const isChrome = event.target.closest(".image-node, .image-selection, .image-color-panel, .image-context-menu, .image-canvas-menu, .image-topbar, .theme-toggle");
+            const isChrome = event.target.closest(".image-node, .image-selection, .image-color-panel, .image-geometry-panel, .image-context-menu, .image-canvas-menu, .image-topbar, .theme-toggle");
             if (isChrome) return;
             if (event.button === 0) {
                 api.markCanvasActive();
                 api.hideContextMenu();
                 api.hideCanvasMenu();
                 api.hideColorPanel();
+                api.hideGeometryPanel();
                 api.els.stage.setPointerCapture(event.pointerId);
                 activeMarquee = {
                     pointerId: event.pointerId,

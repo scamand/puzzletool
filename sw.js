@@ -1,4 +1,4 @@
-const CACHE_VERSION = "puzzletool-v7";
+const CACHE_VERSION = "puzzletool-v8";
 const APP_CACHE = `${CACHE_VERSION}-app`;
 
 const PRECACHE_URLS = [
@@ -10,6 +10,8 @@ const PRECACHE_URLS = [
     "./theme/common-styles.css",
     "./theme/theme-system.js",
     "./theme/cache-client.js",
+    "./recommended-tools.js",
+    "./release-notes.js",
     "./things/puzzle.svg",
     "./things/text-icon.svg",
     "./text-tools/text-tools.html",
@@ -23,6 +25,7 @@ const PRECACHE_URLS = [
     "./image-tools/js/interactions/clipboard.js",
     "./image-tools/js/interactions/select-move-resize.js",
     "./image-tools/js/interactions/context-menu.js",
+    "./image-tools/js/interactions/geometry-panel.js",
     "./image-tools/js/color/binary.js",
     "./image-tools/js/color/filter-controls.js",
     "./image-tools/js/color/color-panel.js"

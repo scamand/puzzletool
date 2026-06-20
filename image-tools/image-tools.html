@@ -53,7 +53,42 @@
 
 <div class="image-context-menu" id="imageContextMenu">
     <button type="button" data-action="open-color">改变颜色</button>
+    <button type="button" data-action="open-geometry">改变位置/大小</button>
 </div>
+
+<aside class="image-geometry-panel image-follow-panel" id="imageGeometryPanel" aria-label="改变位置/大小" hidden>
+    <div class="image-panel-head">
+        <strong>改变位置/大小</strong>
+        <button class="image-panel-close" id="imageGeometryPanelClose" type="button" aria-label="关闭">&times;</button>
+    </div>
+    <div class="image-geometry-body">
+        <label class="image-control-field">
+            <span>中心 X</span>
+            <input class="image-number-input" type="number" step="1" data-geometry="center-x">
+        </label>
+        <label class="image-control-field">
+            <span>中心 Y</span>
+            <input class="image-number-input" type="number" step="1" data-geometry="center-y">
+        </label>
+        <label class="image-control-field">
+            <span>旋转角度</span>
+            <input class="image-number-input" type="number" step="1" data-geometry="rotation">
+        </label>
+        <label class="image-control-field">
+            <span>宽</span>
+            <input class="image-number-input" type="number" min="36" step="1" data-geometry="width">
+        </label>
+        <label class="image-control-field">
+            <span>高</span>
+            <input class="image-number-input" type="number" min="36" step="1" data-geometry="height">
+        </label>
+        <label class="image-menu-option image-geometry-lock">
+            <input type="checkbox" data-geometry-lock>
+            <span>锁定横纵比</span>
+        </label>
+        <button class="image-action-btn image-geometry-apply" type="button" data-action="apply-geometry">应用</button>
+    </div>
+</aside>
 
 <div class="image-canvas-menu" id="imageCanvasMenu">
     <button class="image-canvas-action" type="button" data-action="open-move-mode">移动模式</button>
@@ -172,6 +207,7 @@
 <script src="./js/interactions/clipboard.js"></script>
 <script src="./js/interactions/select-move-resize.js"></script>
 <script src="./js/interactions/context-menu.js"></script>
+<script src="./js/interactions/geometry-panel.js"></script>
 <script src="./js/color/filter-controls.js"></script>
 <script src="./js/color/color-panel.js"></script>
 <script src="./js/app.js"></script>
