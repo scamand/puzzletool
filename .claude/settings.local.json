@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -File build-bundle.ps1)"
+      "Bash(powershell -File build-bundle.ps1)",
+      "Bash(node --check image-tools/js/banner-settings.js)",
+      "Bash(node --check sw.js)",
+      "Bash(node --check image-tools/js/app.js)",
+      "Bash(node --check image-tools/js/history.js)",
+      "Bash(node --check image-tools/js/state.js)"
     ]
   }
 }

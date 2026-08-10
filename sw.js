@@ -1,4 +1,4 @@
-const CACHE_VERSION = "puzzletool-v8";
+const CACHE_VERSION = "puzzletool-v9";
 const APP_CACHE = `${CACHE_VERSION}-app`;
 
 const PRECACHE_URLS = [
@@ -28,7 +28,8 @@ const PRECACHE_URLS = [
     "./image-tools/js/interactions/geometry-panel.js",
     "./image-tools/js/color/binary.js",
     "./image-tools/js/color/filter-controls.js",
-    "./image-tools/js/color/color-panel.js"
+    "./image-tools/js/color/color-panel.js",
+    "./image-tools/js/banner-settings.js"
 ];
 
 function sameAppUrl(url) {

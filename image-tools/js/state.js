@@ -11,7 +11,22 @@
         gridSize: 32,
         rotationStep: 15,
         nextId: 1,
-        nextZ: 20
+        nextZ: 20,
+        bannerSettings: {
+            dayMode: { type: "solid", colorA: "#ffffff", colorB: "#ffffff" },
+            nightMode: { type: "solid", colorA: "#1a1a2e", colorB: "#1a1a2e" },
+            showGrid: true,
+            dayPresets: [
+                { type: "solid", colorA: "#ffffff", colorB: "#ffffff" },
+                { type: "solid", colorA: "#f0f0f0", colorB: "#f0f0f0" },
+                { type: "gradient", colorA: "#667eea", colorB: "#764ba2" }
+            ],
+            nightPresets: [
+                { type: "solid", colorA: "#1a1a2e", colorB: "#1a1a2e" },
+                { type: "solid", colorA: "#16213e", colorB: "#16213e" },
+                { type: "gradient", colorA: "#0f0c29", colorB: "#302b63" }
+            ]
+        }
     };
 
     function clamp(value, min, max) {

@@ -613,6 +613,316 @@ body.canvas-active .image-topbar:not(:hover):not(:focus-within) .main-title {
     }
 }
 
+/* 设置模态框样式 */
+.image-topbar .topbar-actions {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    display: flex;
+    gap: 8px;
+    transform: translateY(-50%);
+}
+
+.image-topbar .topbar-btn {
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 9px;
+    border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+    background: transparent;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: transform .2s ease, background-color .2s ease, border-color .2s ease;
+    font-family: inherit;
+}
+
+.image-topbar .topbar-btn:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--primary-soft) 76%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 52%, transparent);
+}
+
+.image-topbar .topbar-btn.warn {
+    border-color: color-mix(in srgb, var(--danger) 46%, transparent);
+    color: color-mix(in srgb, var(--danger) 76%, white 24%);
+}
+
+.settings-modal .settings-content {
+    width: min(520px, calc(100vw - 28px));
+    height: min(580px, calc(100vh - 42px));
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    overflow: hidden;
+}
+
+.settings-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.settings-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 14px;
+}
+
+.settings-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid var(--line);
+    padding-right: 12px;
+}
+
+.settings-tab {
+    min-height: 42px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-main);
+    text-align: left;
+    padding: 0 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.settings-tab.active,
+.settings-tab:hover {
+    border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+    background: color-mix(in srgb, var(--primary-soft) 68%, transparent);
+}
+
+.settings-main {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.settings-panel {
+    display: none;
+}
+
+.settings-panel.active {
+    display: block;
+}
+
+.settings-list {
+    display: grid;
+    gap: 10px;
+}
+
+.settings-row {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-3);
+    overflow: hidden;
+}
+
+.settings-row summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 12px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.settings-row summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-row-title {
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.settings-row-meta {
+    color: var(--text-sub);
+    font-size: .82rem;
+}
+
+.settings-row-body {
+    display: grid;
+    gap: 12px;
+    padding: 0 12px 12px;
+}
+
+/* 横幅设置样式 */
+.banner-mode-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.banner-mode-tab {
+    flex: 1;
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .16s ease;
+}
+
+.banner-mode-tab.active {
+    border-color: color-mix(in srgb, var(--primary) 52%, transparent);
+    background: color-mix(in srgb, var(--primary-soft) 68%, transparent);
+    color: var(--text-main);
+}
+
+.banner-color-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.banner-color-label {
+    font-size: .82rem;
+    color: var(--text-sub);
+    min-width: 20px;
+}
+
+.banner-color-swatch {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+}
+
+.banner-color-swatch input[type="color"] {
+    width: 60px;
+    height: 60px;
+    border: none;
+    cursor: pointer;
+    transform: translate(-8px, -8px);
+}
+
+.banner-hex-input {
+    flex: 1;
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-main);
+    padding: 0 10px;
+    font-family: inherit;
+    outline: none;
+}
+
+.banner-hex-input:focus {
+    border-color: color-mix(in srgb, var(--primary) 72%, white 28%);
+}
+
+.banner-gradient-preview {
+    height: 60px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-top: 10px;
+    transition: background .2s ease;
+}
+
+.banner-presets-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.banner-preset-btn {
+    flex: 1;
+    min-height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .16s ease;
+}
+
+.banner-preset-btn:hover {
+    border-color: color-mix(in srgb, var(--primary) 52%, transparent);
+    background: color-mix(in srgb, var(--primary-soft) 68%, transparent);
+    color: var(--text-main);
+}
+
+.banner-save-preset-btn {
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--primary-soft) 82%, transparent);
+    color: var(--text-main);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .16s ease;
+}
+
+.banner-save-preset-btn:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--primary-soft) 92%, transparent);
+}
+
+.banner-grid-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.banner-grid-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.banner-grid-toggle span {
+    color: var(--text-main);
+    font-size: .9rem;
+}
+
+.banner-reset-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.banner-reset-btn {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .16s ease;
+}
+
+.banner-reset-btn:hover {
+    border-color: color-mix(in srgb, var(--danger) 52%, transparent);
+    background: var(--danger-soft);
+    color: color-mix(in srgb, var(--danger) 76%, white 24%);
+}
+
+.settings-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-sub);
+}
+
 @media (max-width: 840px) {
     .image-topbar {
         top: 8px;
